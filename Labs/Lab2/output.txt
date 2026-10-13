@@ -1,0 +1,2 @@
+Makefile checker.sh command.c command.h command.o input.txt lab2 main.c main.o string_parser.c string_parser.h string_parser.o 
+Error! Unrecognized command: cat
