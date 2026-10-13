@@ -64,9 +64,7 @@ int main(int argc, char* argv[]){
             /* TODO 2: Read one line from stdin with getline().
              * Hint: getline(&line, &len, stdin) returns -1 on EOF
              *       (e.g. the user presses Ctrl-D). */
-		line = NULL;
-
-		ssize_t res = getline(&line, &size, stdin);
+		ssize_t res = getline(&line, &len, stdin);
 		if (res == -1) {
 			// do something to return
 			return 0;
@@ -80,6 +78,7 @@ int main(int argc, char* argv[]){
              * no command to run. Skip to the next loop iteration.
              * Hint: what happens if you read cmd.command_list[0] here? */
 		if (cmd.num_token == 0) {
+			free_command_line(&cmd);
 			continue;
 		}
 
@@ -95,16 +94,14 @@ int main(int argc, char* argv[]){
 		if (strcmp(cmd.command_list[0], "ls") == 0) {
 			listDir();
 		} else if (strcmp(cmd.command_list[0], "exit") == 0) {
-			free(line);
 			free_command_line(&cmd);
-			exit(0);
+			break;
 		} else {
 			printf("Error! Unrecognized command: %s\n", cmd.command_list[0]);
 		}
 
             /* TODO 6: Free this command's tokens before the next loop. */
 		free_command_line(&cmd);
-		free(line);
         }
     }
 
@@ -134,11 +131,12 @@ int main(int argc, char* argv[]){
          *       fin instead of stdin. For each line, do the same steps as
          *       TODO 3-6 (no prompt in file mode). */
 
-	while (getline(&line, &size, fin) != -1) {
+	while (getline(&line, &len, fin) != -1) {
 		command_line cmd;
 		cmd = str_filler(line, " ");
 
 		if (cmd.num_token == 0) {
+			free_command_line(&cmd);
 			continue;
 		}	
 		if (strcmp(cmd.command_list[0], "ls") == 0) {
