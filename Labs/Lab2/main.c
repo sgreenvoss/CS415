@@ -97,7 +97,9 @@ int main(int argc, char* argv[]){
 			free_command_line(&cmd);
 			break;
 		} else {
-			printf("Error! Unrecognized command: %s\n", cmd.command_list[0]);
+			write(STDOUT_FILENO, "Error! Unrecognized command: ", 29);
+			write(STDOUT_FILENO, cmd.command_list[0], strlen(cmd.command_list[0]));
+			write(STDOUT_FILENO, "\n", 1);
 		}
 
             /* TODO 6: Free this command's tokens before the next loop. */
@@ -145,7 +147,10 @@ int main(int argc, char* argv[]){
 			free_command_line(&cmd);
 			break;	
 		} else {
-			printf("Error! Unrecognized command: %s\n", cmd.command_list[0]);
+
+			write(STDOUT_FILENO, "Error! Unrecognized command: ", 29);
+			write(STDOUT_FILENO, cmd.command_list[0], strlen(cmd.command_list[0]));
+			write(STDOUT_FILENO, "\n", 1);
 		}
 		free_command_line(&cmd);
         }
