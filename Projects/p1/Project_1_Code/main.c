@@ -44,8 +44,7 @@ int main(int argc, char* argv[]){
             if (strcmp(cmd.command_list[0], "ls") == 0) {
                 listDir();
             } else if (strcmp(cmd.command_list[0], "pwd") == 0) {
-                showCurrentDir()
-            }
+                showCurrentDir();
             } else if (strcmp(cmd.command_list[0], "exit") == 0) {
                 free_command_line(&cmd);
                 break;
@@ -96,7 +95,7 @@ int main(int argc, char* argv[]){
             if (strcmp(cmd.command_list[0], "ls") == 0) {
                 listDir();	
             } else if (strcmp(cmd.command_list[0], "pwd") == 0) {
-                showCurrentDir()
+                showCurrentDir();
             } else if (strcmp(cmd.command_list[0], "exit") == 0) {
                 free_command_line(&cmd);
                 break;	
