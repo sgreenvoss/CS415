@@ -141,30 +141,24 @@ void showCurrentDir() /*for the pwd command*/
 
 void makeDir(char *dirName) 
 {
-	continue;
 }
 
 void changeDir(char *dirName) /*for the cd command*/
 { 
-	continue;
 }
 
 void copyFile(char *sourcePath, char *destinationPath) /*for the cp command*/
 {
-	continue;
 }
 
 void moveFile(char *sourcePath, char *destinationPath) /*for the mv command*/
 {
-	continue;
 }
 
 void deleteFile(char *filename) /*for the rm command*/
 {
-	continue;
 }
 
 void displayFile(char *filename) /*for the cat command*/
 {
-	continue;
 }
