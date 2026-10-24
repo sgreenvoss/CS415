@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include "command.h"
+#include "string_parser.h"
 
 int main(int argc, char* argv[]){
     size_t len = 1024;

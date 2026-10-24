@@ -128,7 +128,7 @@ void listDir()
 	}
 }
 
-void showCurrentDir(); /*for the pwd command*/
+void showCurrentDir() /*for the pwd command*/
 {
 	char cwd[1024];
 	size_t size = 1024;
@@ -139,14 +139,32 @@ void showCurrentDir(); /*for the pwd command*/
 	write(STDOUT_FILENO, cwd, strlen(cwd));
 }
 
-void makeDir(char *dirName); /*for the mkdir command*/
+void makeDir(char *dirName) 
+{
+	continue;
+}
 
-void changeDir(char *dirName); /*for the cd command*/
+void changeDir(char *dirName) /*for the cd command*/
+{ 
+	continue;
+}
 
-void copyFile(char *sourcePath, char *destinationPath); /*for the cp command*/
+void copyFile(char *sourcePath, char *destinationPath) /*for the cp command*/
+{
+	continue;
+}
 
-void moveFile(char *sourcePath, char *destinationPath); /*for the mv command*/
+void moveFile(char *sourcePath, char *destinationPath) /*for the mv command*/
+{
+	continue;
+}
 
-void deleteFile(char *filename); /*for the rm command*/
+void deleteFile(char *filename) /*for the rm command*/
+{
+	continue;
+}
 
-void displayFile(char *filename); /*for the cat command*/
+void displayFile(char *filename) /*for the cat command*/
+{
+	continue;
+}
