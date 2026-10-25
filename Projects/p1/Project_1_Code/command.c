@@ -31,6 +31,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <dirent.h>
+#include <errno.h>
 #include <sys/stat.h>
 
 #define MAX_FILES 1024
@@ -137,10 +138,19 @@ void showCurrentDir() /*for the pwd command*/
 	}
 
 	write(STDOUT_FILENO, cwd, strlen(cwd));
+	write(STDOUT_FILENO, '\n', 1);
 }
 
 void makeDir(char *dirName) 
 {
+	if (mkdir(dirname, 755) != 0) {
+		if (errno == EEXIST) {
+			char* message = "Error: Directory already exists.";
+			printf(STDOUT_FILENO, message, strlen(message));
+		} else {
+			perror("Error creating directory");
+		}
+	}
 }
 
 void changeDir(char *dirName) /*for the cd command*/
