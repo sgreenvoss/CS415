@@ -138,23 +138,34 @@ void showCurrentDir() /*for the pwd command*/
 	}
 
 	write(STDOUT_FILENO, cwd, strlen(cwd));
-	write(STDOUT_FILENO, '\n', 1);
+	write(STDOUT_FILENO, "\n", 1);
 }
 
 void makeDir(char *dirName) 
 {
-	if (mkdir(dirname, 755) != 0) {
+	if (mkdir(dirName, 755) != 0) {
 		if (errno == EEXIST) {
-			char* message = "Error: Directory already exists.";
-			printf(STDOUT_FILENO, message, strlen(message));
+			char* message = "Error: Directory already exists.\n";
+			write(STDOUT_FILENO, message, strlen(message));
 		} else {
-			perror("Error creating directory");
+			perror("Error creating directory\n");
 		}
 	}
 }
 
 void changeDir(char *dirName) /*for the cd command*/
 { 
+	if (chdir(dirName) != 0) {
+		char* error_message;
+		if (errno == ENOENT) {
+			error_message = "Error: Directory does not exist.\n";)
+		} else if (errno == EACCES) {
+			error_message = "Error: Permission denied.\n";
+		} else {
+			error_message = "Error opening directory.\n";
+		}
+		write(STDOUT_FILENO, message, strlen(message));
+	}
 }
 
 void copyFile(char *sourcePath, char *destinationPath) /*for the cp command*/
