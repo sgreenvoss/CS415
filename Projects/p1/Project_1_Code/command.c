@@ -223,7 +223,7 @@ void copyFile(char *sourcePath, char *destinationPath) /*for the cp command*/
 		free(buffer);
 		return;
 	} 
-	fchmod(ofd, 644);
+	fchmod(ofd, 744);
 	close(fd); close(ofd);
 	free(buffer);
 }
@@ -238,10 +238,12 @@ void deleteFile(char *filename) /*for the rm command*/
 	char* error_msg;
 	if (stat(filename, &sb) == -1) {
 		writeMsg("Error: could not stat file.\n", STDOUT_FILENO);
+		return;
 	}
 
 	if (sb.st_mode == S_IFDIR) {
 		writeMsg("Error: cannot remove directory.\n", STDOUT_FILENO);
+		return;
 	}
 
 	if (remove(filename) == -1) {
