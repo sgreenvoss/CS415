@@ -27,14 +27,20 @@ int main(int argc, char* argv[]){
 
             command_line cmd;
             command_line cmds;
+            int exiting = 0;
             cmds = str_filler(line, ";");
 
             for (int i = 0; i < cmds.num_token; i++) {
-                cmd = str_filler(cmds[i], " ");
+                cmd = str_filler(cmds.command_list[i], " ");
 
                 if (cmd.num_token == 0) {
                     free_command_line(&cmd);
                     continue;
+                } else if (exiting) {
+                    free_command_line(&cmd);
+                    free_command_line(&cmds);
+                    free(line);
+                    exit(0);
                 }
 
                     /* TODO 5: Run the command.
@@ -83,6 +89,8 @@ int main(int argc, char* argv[]){
 
                 } else if (strcmp(cmd.command_list[0], "exit") == 0) {
                     free_command_line(&cmd);
+                    // hacky, but need to break out of both loops here. 
+                    exiting = 1;
                     break;
                 }  else {
                     write(STDOUT_FILENO, "Error! Unrecognized command: ", 29);
