@@ -227,6 +227,25 @@ void copyFile(char *sourcePath, char *destinationPath) /*for the cp command*/
 	free(buffer);
 }
 
+void deleteFile(char *filename) /*for the rm command*/
+{
+	struct stat sb;
+	char* error_msg;
+	if (stat(filename, &sb) == -1) {
+		writeMsg("Error: could not stat file.\n", STDOUT_FILENO);
+		return;
+	}
+
+	if (sb.st_mode == S_IFDIR) {
+		writeMsg("Error: cannot remove directory.\n", STDOUT_FILENO);
+		return;
+	}
+
+	if (remove(filename) == -1) {
+		writeMsg("Error: could not remove file.\n", STDOUT_FILENO);
+	}
+}
+
 void moveFile(char *sourcePath, char *destinationPath) /*for the mv command*/
 {
 	int fd = open(sourcePath, O_WRONLY);
@@ -278,6 +297,7 @@ void moveFile(char *sourcePath, char *destinationPath) /*for the mv command*/
 	} 
 
 	close(fd);
+	// yay reduce reuse recycle
 	deleteFile(sourcePath);
 
 	close(ofd);
@@ -285,24 +305,6 @@ void moveFile(char *sourcePath, char *destinationPath) /*for the mv command*/
 
 }
 
-void deleteFile(char *filename) /*for the rm command*/
-{
-	struct stat sb;
-	char* error_msg;
-	if (stat(filename, &sb) == -1) {
-		writeMsg("Error: could not stat file.\n", STDOUT_FILENO);
-		return;
-	}
-
-	if (sb.st_mode == S_IFDIR) {
-		writeMsg("Error: cannot remove directory.\n", STDOUT_FILENO);
-		return;
-	}
-
-	if (remove(filename) == -1) {
-		writeMsg("Error: could not remove file.\n", STDOUT_FILENO);
-	}
-}
 
 void displayFile(char *filename) /*for the cat command*/
 {
