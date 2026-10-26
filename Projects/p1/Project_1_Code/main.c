@@ -11,12 +11,19 @@ int main(int argc, char* argv[]){
     char *line = malloc(len * sizeof(char));
     size_t size;
     int exiting = 0;
+    command_line cmd;
+    command_line cmds;
 
     /* ------------------------------------------------------------------ */
     /*  Interactive mode                                                   */
     /* ------------------------------------------------------------------ */
     if (argc == 1) {
         while (1) {
+            if (exiting) {
+                free_command_line(&cmds);
+                free(line);
+                exit(0);
+            }
 
 		    write(STDOUT_FILENO, ">>> ", 4);
 
@@ -26,16 +33,7 @@ int main(int argc, char* argv[]){
                 return 0;
             }
 
-            command_line cmd;
-            command_line cmds;
-
             cmds = str_filler(line, ";");
-
-            if (exiting) {
-                free_command_line(&cmds);
-                free(line);
-                exit(0);
-            }
 
             for (int i = 0; i < cmds.num_token; i++) {
                 cmd = str_filler(cmds.command_list[i], " ");
@@ -138,64 +136,86 @@ int main(int argc, char* argv[]){
          *       TODO 3-6 (no prompt in file mode). */
 
 	    while (getline(&line, &len, fin) != -1) {
-            command_line cmd;
-            cmd = str_filler(line, " ");
-
-            if (cmd.num_token == 0) {
-                free_command_line(&cmd);
-                continue;
+            if (exiting) {
+                free_command_line(&cmds);
+                free(line);
+                fclose(fout);
+                fclose(fin);
+                exit(0);
             }
 
-                /* TODO 5: Run the command.
-                *   - "ls"   -> call listDir()
-                *   - "exit" -> free everything you allocated, then exit(0)
-                *   - other  -> print "Error! Unrecognized command: <cmd>\n"
-                * Hint: compare strings with strcmp(), not ==.
-                * Hint: before exit(0), think about which heap memory is still
-                *       allocated (cmd? line?). valgrind will tell you if you
-                *       forget something. */
-            
-            if (strcmp(cmd.command_list[0], "ls") == 0) {
-                if (cmd.num_token > 1) {
-                    writeMsg("Error: too many arguments for ls.\n", STDOUT_FILENO);
-                } else listDir();
+            cmds = str_filler(line, ";");
 
-            } else if (strcmp(cmd.command_list[0], "pwd") == 0) {
-                if (cmd.num_token > 1) {
-                    writeMsg("Error: too many arguments for pwd.\n", STDOUT_FILENO);
-                } else showCurrentDir();
+            for (int i = 0; i < cmds.num_token; i++) {
+                cmd = str_filler(cmds.command_list[i], " ");
 
-            } else if (strcmp(cmd.command_list[0], "mkdir") == 0) {
-                if (cmd.num_token != 2) {
-                    writeMsg("Error: incorrect number of arguments for mkdir.\n", STDOUT_FILENO);
-                } else makeDir(cmd.command_list[1]);
+                if (cmd.num_token == 0) {
+                    free_command_line(&cmd);
+                    continue;
+                }
 
-            } else if (strcmp(cmd.command_list[0], "cd") == 0) {
-                if (cmd.num_token != 2) {
-                    writeMsg("Error: incorrect number of arguments for cd.\n", STDOUT_FILENO);
-                } else changeDir(cmd.command_list[1]);
+                    /* TODO 5: Run the command.
+                    *   - "ls"   -> call listDir()
+                    *   - "exit" -> free everything you allocated, then exit(0)
+                    *   - other  -> print "Error! Unrecognized command: <cmd>\n"
+                    * Hint: compare strings with strcmp(), not ==.
+                    * Hint: before exit(0), think about which heap memory is still
+                    *       allocated (cmd? line?). valgrind will tell you if you
+                    *       forget something. */
+                
+                if (strcmp(cmd.command_list[0], "ls") == 0) {
+                    if (cmd.num_token > 1) {
+                        writeMsg("Error: too many arguments for ls.\n", STDOUT_FILENO);
+                    } else listDir();
 
-            } else if (strcmp(cmd.command_list[0], "cp") == 0) {
-                if (cmd.num_token != 3) {
-                    writeMsg("Error: incorrect number of arguments for cp.\n", STDOUT_FILENO);
-                } else copyFile(cmd.command_list[1], cmd.command_list[2]);
+                } else if (strcmp(cmd.command_list[0], "pwd") == 0) {
+                    if (cmd.num_token > 1) {
+                        writeMsg("Error: too many arguments for pwd.\n", STDOUT_FILENO);
+                    } else showCurrentDir();
 
-            } else if (strcmp(cmd.command_list[0], "rm") == 0) {
-                if (cmd.num_token != 2) {
-                    writeMsg("Error: incorrect number of arguments for rm.\n", STDOUT_FILENO);
-                } else deleteFile(cmd.command_list[1]);
+                } else if (strcmp(cmd.command_list[0], "mkdir") == 0) {
+                    if (cmd.num_token != 2) {
+                        writeMsg("Error: incorrect number of arguments for mkdir.\n", STDOUT_FILENO);
+                    } else makeDir(cmd.command_list[1]);
 
-            } else if (strcmp(cmd.command_list[0], "exit") == 0) {
+                } else if (strcmp(cmd.command_list[0], "cd") == 0) {
+                    if (cmd.num_token != 2) {
+                        writeMsg("Error: incorrect number of arguments for cd.\n", STDOUT_FILENO);
+                    } else changeDir(cmd.command_list[1]);
+
+                } else if (strcmp(cmd.command_list[0], "cp") == 0) {
+                    if (cmd.num_token != 3) {
+                        writeMsg("Error: incorrect number of arguments for cp.\n", STDOUT_FILENO);
+                    } else copyFile(cmd.command_list[1], cmd.command_list[2]);
+
+                } else if (strcmp(cmd.command_list[0], "rm") == 0) {
+                    if (cmd.num_token != 2) {
+                        writeMsg("Error: incorrect number of arguments for rm.\n", STDOUT_FILENO);
+                    } else deleteFile(cmd.command_list[1]);
+
+                } else if (strcmp(cmd.command_list[0], "mv") == 0) {
+                    if (cmd.num_token != 3) {
+                        writeMsg("Error: incorrect number of arguments for mv.\n", STDOUT_FILENO);
+                    } else moveFile(cmd.command_list[1], cmd.command_list[2]);
+
+                } else if (strcmp(cmd.command_list[0], "cat") == 0) {
+                    if (cmd.num_token != 2) {
+                        writeMsg("Error: incorrect number of arguments for cat.\n", STDOUT_FILENO);
+                    } else displayFile(cmd.command_list[1]);
+
+                } else if (strcmp(cmd.command_list[0], "exit") == 0) {
+                    free_command_line(&cmd);
+                    exiting = 1;
+                    break;
+                }  else {
+                    write(STDOUT_FILENO, "Error! Unrecognized command: ", 29);
+                    write(STDOUT_FILENO, cmd.command_list[0], strlen(cmd.command_list[0]));
+                    write(STDOUT_FILENO, "\n", 1);
+                }
+
                 free_command_line(&cmd);
-                break;
-            }  else {
-                write(STDOUT_FILENO, "Error! Unrecognized command: ", 29);
-                write(STDOUT_FILENO, cmd.command_list[0], strlen(cmd.command_list[0]));
-                write(STDOUT_FILENO, "\n", 1);
             }
-
-            free_command_line(&cmd);
-        
+            free_command_line(&cmds);
         }
 
         fclose(fout);

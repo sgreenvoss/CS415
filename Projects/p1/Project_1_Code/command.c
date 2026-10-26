@@ -331,6 +331,7 @@ void displayFile(char *filename) /*for the cat command*/
 
 	if (read(fd, buffer, file_size) == -1) {
 		writeMsg("Error: read failed.\n", STDOUT_FILENO);
+		fprintf(stdout, "%s", strerror(errno));
 		close(fd);
 		free(buffer);
 		return;
