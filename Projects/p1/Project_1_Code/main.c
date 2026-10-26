@@ -5,8 +5,8 @@
 #include "command.h"
 #include "string_parser.h"
 
-void writeError(char* error_msg, int loc) {
-    write(loc, error_msg, strlen(error_msg));
+void writeMsg(char* msg, int loc) {
+    write(loc, msg, strlen(msg));
 }
 
 int main(int argc, char* argv[]){
@@ -47,32 +47,32 @@ int main(int argc, char* argv[]){
             
             if (strcmp(cmd.command_list[0], "ls") == 0) {
                 if (cmd.num_token > 1) {
-                    writeError("Error: too many arguments for ls.\n", STDOUT_FILENO);
+                    writeMsg("Error: too many arguments for ls.\n", STDOUT_FILENO);
                 } else listDir();
 
             } else if (strcmp(cmd.command_list[0], "pwd") == 0) {
                 if (cmd.num_token > 1) {
-                    writeError("Error: too many arguments for pwd.\n", STDOUT_FILENO);
+                    writeMsg("Error: too many arguments for pwd.\n", STDOUT_FILENO);
                 } else showCurrentDir();
 
             } else if (strcmp(cmd.command_list[0], "mkdir") == 0) {
                 if (cmd.num_token != 2) {
-                    writeError("Error: incorrect number of parameters for mkdir.\n", STDOUT_FILENO);
+                    writeMsg("Error: incorrect number of parameters for mkdir.\n", STDOUT_FILENO);
                 } else makeDir(cmd.command_list[1]);
 
             } else if (strcmp(cmd.command_list[0], "cd") == 0) {
                 if (cmd.num_token != 2) {
-                    writeError("Error: incorrect number of parameters for cd.\n", STDOUT_FILENO);
+                    writeMsg("Error: incorrect number of parameters for cd.\n", STDOUT_FILENO);
                 } else changeDir(cmd.command_list[1]);
 
             } else if (strcmp(cmd.command_list[0], "cp") == 0) {
                 if (cmd.num_token != 3) {
-                    writeError("Error: incorrect number of parameters for cp.\n", STDOUT_FILENO);
+                    writeMsg("Error: incorrect number of parameters for cp.\n", STDOUT_FILENO);
                 } else copyFile(cmd.command_list[1], cmd.command_list[2]);
 
             } else if (strcmp(cmd.command_list[0], "rm") == 0) {
                 if (cmd.num_token != 2) {
-                    writeError("Error: incorrect number of parameters for rm.\n", STDOUT_FILENO);
+                    writeMsg("Error: incorrect number of parameters for rm.\n", STDOUT_FILENO);
                 } else deleteFile(cmd.command_list[1]);
 
             } else if (strcmp(cmd.command_list[0], "exit") == 0) {
@@ -134,32 +134,32 @@ int main(int argc, char* argv[]){
             
             if (strcmp(cmd.command_list[0], "ls") == 0) {
                 if (cmd.num_token > 1) {
-                    writeError("Error: too many arguments for ls.\n", STDOUT_FILENO);
+                    writeMsg("Error: too many arguments for ls.\n", STDOUT_FILENO);
                 } else listDir();
 
             } else if (strcmp(cmd.command_list[0], "pwd") == 0) {
                 if (cmd.num_token > 1) {
-                    writeError("Error: too many arguments for pwd.\n", STDOUT_FILENO);
+                    writeMsg("Error: too many arguments for pwd.\n", STDOUT_FILENO);
                 } else showCurrentDir();
 
             } else if (strcmp(cmd.command_list[0], "mkdir") == 0) {
                 if (cmd.num_token != 2) {
-                    writeError("Error: incorrect number of parameters for mkdir.\n", STDOUT_FILENO);
+                    writeMsg("Error: incorrect number of parameters for mkdir.\n", STDOUT_FILENO);
                 } else makeDir(cmd.command_list[1]);
 
             } else if (strcmp(cmd.command_list[0], "cd") == 0) {
                 if (cmd.num_token != 2) {
-                    writeError("Error: incorrect number of parameters for cd.\n", STDOUT_FILENO);
+                    writeMsg("Error: incorrect number of parameters for cd.\n", STDOUT_FILENO);
                 } else changeDir(cmd.command_list[1]);
 
             } else if (strcmp(cmd.command_list[0], "cp") == 0) {
                 if (cmd.num_token != 3) {
-                    writeError("Error: incorrect number of parameters for cp.\n", STDOUT_FILENO);
+                    writeMsg("Error: incorrect number of parameters for cp.\n", STDOUT_FILENO);
                 } else copyFile(cmd.command_list[1], cmd.command_list[2]);
 
             } else if (strcmp(cmd.command_list[0], "rm") == 0) {
                 if (cmd.num_token != 2) {
-                    writeError("Error: incorrect number of parameters for rm.\n", STDOUT_FILENO);
+                    writeMsg("Error: incorrect number of parameters for rm.\n", STDOUT_FILENO);
                 } else deleteFile(cmd.command_list[1]);
 
             } else if (strcmp(cmd.command_list[0], "exit") == 0) {

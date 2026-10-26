@@ -37,7 +37,7 @@
 
 #define MAX_FILES 1024
 
-void writeError(char* error_msg, int loc) {
+void writeMsg(char* error_msg, int loc) {
     write(loc, error_msg, strlen(error_msg));
 }
 
@@ -236,15 +236,15 @@ void deleteFile(char *filename) /*for the rm command*/
 	struct stat sb;
 	char* error_msg;
 	if (stat(filename, &sb) == -1) {
-		writeError("Error: could not stat file.\n", STDOUT_FILENO);
+		writeMsg("Error: could not stat file.\n", STDOUT_FILENO);
 	}
 
 	if (sb.st_mode == S_IFDIR) {
-		writeError("Error: cannot remove directory.\n", STDOUT_FILENO);
+		writeMsg("Error: cannot remove directory.\n", STDOUT_FILENO);
 	}
 
 	if (remove(filename) == -1) {
-		writeError("Error: could not remove file.\n", STDOUT_FILENO);
+		writeMsg("Error: could not remove file.\n", STDOUT_FILENO);
 	}
 }
 
