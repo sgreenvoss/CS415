@@ -178,6 +178,7 @@ void copyFile(char *sourcePath, char *destinationPath) /*for the cp command*/
 {
 	int fd = open(sourcePath, O_RDONLY);
 	int ofd = open(destinationPath, O_WRONLY | O_CREAT, 0644);
+
 	char* error_message = "";
 
 	if (fd < 0) {
@@ -190,13 +191,21 @@ void copyFile(char *sourcePath, char *destinationPath) /*for the cp command*/
 		write(STDOUT_FILENO, error_message, strlen(error_message));
 		return;
 	}
+	struct stat d_st; // dest stat
 
 	struct stat st;
-	if (fstat(fd, &st) == -1) {
+	if (fstat(fd, &st) == -1 || fstat(ofd, &d_st) == -1) {
 		error_message = "Error: could not retrieve file stats.\n";
 		write(STDOUT_FILENO, error_message, strlen(error_message));
 		close(fd); close(ofd);
 		return;
+	}
+	// figure out what type of destination this is
+	if (d_st.st_mode == S_ISDIR) {
+		// directory
+		close(ofd);
+		char* fname = destinationPath;
+		ofd = open(strcat(fname, basename(sourcePath)), O_WRONLY | OCREAT, 0644);
 	}
 
 	off_t file_size = st.st_size;
