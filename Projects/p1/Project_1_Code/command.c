@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <string.h>
 #include <dirent.h>
 #include <errno.h>
@@ -172,7 +173,7 @@ void copyFile(char *sourcePath, char *destinationPath) /*for the cp command*/
 {
 	int fd = open(sourcePath, O_RDONLY);
 	int ofd = open(destinationPath, O_WRONLY | O_CREAT);
-	char* error_message;
+	char* error_message = "";
 
 	if (fd < 0) {
 		error_message = "Error: could not open source file.\n";
@@ -180,7 +181,7 @@ void copyFile(char *sourcePath, char *destinationPath) /*for the cp command*/
 		error_message = "Error: could not open destination file\n";
 		close(fd);
 	}
-	if (error_message) {
+	if (strlen(error_message) != 0) {
 		write(STDOUT_FILENO, error_message, strlen(error_message));
 		return;
 	}
