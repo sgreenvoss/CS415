@@ -12,15 +12,23 @@ This is a pseudoshell capable of executing basic UNIX commands. It reads input (
 -------------------------------------
 2. SUPPORTED COMMANDS:
 
-    ls                  – lists the contents of the current directory
-    pwd                 – prints the current working directory
-    mkdir <name>        – creates a directory with the name <name>
-    cd <directory>      – changes directories into the directory <directory>
-    cp <src> <dst>      – copies the contents of the file <src> into the file <dst>
-    mv <src> <dst>      – changes the name and location of the file at <src> to the file at <dst>
-    rm <filename>       – deletes the file <filename>
-    cat <filename>      – displays the contents of the file <filename>
-    exit                – exits the program
+    `ls`                  – lists the contents of the current directory
+
+    `pwd`                 – prints the current working directory
+
+    `mkdir "name"`        – creates a directory with the name "name>
+
+    `cd "directory>`      – changes directories into the directory "directory>
+
+    `cp "src> "dst>`      – copies the contents of the file "src> into the file "dst"
+
+    `mv "src" "dst"`      – changes the name and location of the file at "src" to the file at "dst"
+
+    `rm "filename"`       – deletes the file "filename"
+
+    `cat "filename"`      – displays the contents of the file "filename"
+    
+    `exit`               – exits the program
 
 -------------------------------------
 3. COMPILATION:
@@ -30,7 +38,7 @@ Just run "make" and the Makefile should create the executable pseudo-shell.
 -------------------------------------
 4. USAGE:
 
-1. Interactive Mode
+a. Interactive Mode
 
   ```
   ./pseudo-shell
@@ -43,7 +51,7 @@ Just run "make" and the Makefile should create the executable pseudo-shell.
   ```
   To quit, type `quit` or hit Ctrl-C. 
 
-2. File Mode
+b. File Mode
 
   To run in file mode, `./pseudo-shell -f input_file`
 
