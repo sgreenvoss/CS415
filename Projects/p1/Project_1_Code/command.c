@@ -379,14 +379,12 @@ void displayFile(char *filename) /*for the cat command*/
 
 	if (read(fd, buffer, file_size) == -1) {
 		writeMsg("Error: read failed.\n", STDOUT_FILENO);
-		fprintf(stdout, "%s", strerror(errno));
 		close(fd);
 		free(buffer);
 		return;
 	}
 
-	writeMsg(buffer, STDOUT_FILENO);
-
+	write(STDOUT_FILENO, buffer, file_size + 1);
 	close(fd);
 	free(buffer);
 }
