@@ -37,6 +37,10 @@
 
 #define MAX_FILES 1024
 
+void writeError(char* error_msg, int loc) {
+    write(loc, error_msg, strlen(error_msg));
+}
+
 /* Comparison function for qsort() on an array of char* (file names).
  * qsort() passes POINTERS to the array elements, so a and b are really
  * char** and must be dereferenced once to get the strings. */
@@ -218,6 +222,7 @@ void copyFile(char *sourcePath, char *destinationPath) /*for the cp command*/
 		free(buffer);
 		return;
 	} 
+	fchmod(ofd, 644);
 	close(fd); close(ofd);
 	free(buffer);
 }
@@ -228,6 +233,19 @@ void moveFile(char *sourcePath, char *destinationPath) /*for the mv command*/
 
 void deleteFile(char *filename) /*for the rm command*/
 {
+	struct stat sb;
+	char* error_msg;
+	if (stat(filename, &sb) == -1) {
+		writeError("Error: could not stat file.\n", STDOUT_FILENO);
+	}
+
+	if (S_IFDIR(sb.st_mode)) {
+		writeError("Error: cannot remove directory.\n", STDOUT_FILENO);
+	}
+
+	if (remove(filename) == -1) {
+		writeError("Error: could not remove file.\n", STDOUT_FILENO);
+	}
 }
 
 void displayFile(char *filename) /*for the cat command*/

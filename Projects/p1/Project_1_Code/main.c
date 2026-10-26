@@ -5,6 +5,10 @@
 #include "command.h"
 #include "string_parser.h"
 
+void writeError(char* error_msg, int loc) {
+    write(loc, error_msg, strlen(error_msg));
+}
+
 int main(int argc, char* argv[]){
     size_t len = 1024;
     char *line = malloc(len * sizeof(char));
@@ -42,15 +46,40 @@ int main(int argc, char* argv[]){
                 *       forget something. */
             
             if (strcmp(cmd.command_list[0], "ls") == 0) {
+                if (cmd.num_token > 1) {
+                    writeError("Error: too many arguments for ls.\n", STDOUT_FILENO);
+                }
+
                 listDir();
+
             } else if (strcmp(cmd.command_list[0], "pwd") == 0) {
+                if (cmd.num_token > 1) {
+                    writeError("Error: too many arguments for pwd.\n", STDOUT_FILENO);
+                }
+
                 showCurrentDir();
+
             } else if (strcmp(cmd.command_list[0], "mkdir") == 0) {
+                if (cmd.num_token != 2) {
+                    writeError("Error: incorrect number of parameters for mkdir.\n", STDOUT_FILENO);
+                }
+
                 makeDir(cmd.command_list[1]);
+
             } else if (strcmp(cmd.command_list[0], "cd") == 0) {
+                if (cmd.num_token != 2) {
+                    writeError("Error: incorrect number of parameters for cd.\n", STDOUT_FILENO);
+                }
+
                 changeDir(cmd.command_list[1]);
+
             } else if (strcmp(cmd.command_list[0], "cp") == 0) {
+                if (cmd.num_token != 3) {
+                    writeError("Error: incorrect number of parameters for cp.\n", STDOUT_FILENO);
+                }
+
                 copyFile(cmd.command_list[1], cmd.command_list[2]);
+
             } else if (strcmp(cmd.command_list[0], "exit") == 0) {
                 free_command_line(&cmd);
                 break;
@@ -97,21 +126,63 @@ int main(int argc, char* argv[]){
             if (cmd.num_token == 0) {
                 free_command_line(&cmd);
                 continue;
-            }	
+            }
+
+                /* TODO 5: Run the command.
+                *   - "ls"   -> call listDir()
+                *   - "exit" -> free everything you allocated, then exit(0)
+                *   - other  -> print "Error! Unrecognized command: <cmd>\n"
+                * Hint: compare strings with strcmp(), not ==.
+                * Hint: before exit(0), think about which heap memory is still
+                *       allocated (cmd? line?). valgrind will tell you if you
+                *       forget something. */
+            
             if (strcmp(cmd.command_list[0], "ls") == 0) {
-                listDir();	
+                if (cmd.num_token > 1) {
+                    writeError("Error: too many arguments for ls.\n", STDOUT_FILENO);
+                }
+
+                listDir();
+
             } else if (strcmp(cmd.command_list[0], "pwd") == 0) {
+                if (cmd.num_token > 1) {
+                    writeError("Error: too many arguments for pwd.\n", STDOUT_FILENO);
+                }
+
                 showCurrentDir();
+
+            } else if (strcmp(cmd.command_list[0], "mkdir") == 0) {
+                if (cmd.num_token != 2) {
+                    writeError("Error: incorrect number of parameters for mkdir.\n", STDOUT_FILENO);
+                }
+
+                makeDir(cmd.command_list[1]);
+
+            } else if (strcmp(cmd.command_list[0], "cd") == 0) {
+                if (cmd.num_token != 2) {
+                    writeError("Error: incorrect number of parameters for cd.\n", STDOUT_FILENO);
+                }
+
+                changeDir(cmd.command_list[1]);
+
+            } else if (strcmp(cmd.command_list[0], "cp") == 0) {
+                if (cmd.num_token != 3) {
+                    writeError("Error: incorrect number of parameters for cp.\n", STDOUT_FILENO);
+                }
+
+                copyFile(cmd.command_list[1], cmd.command_list[2]);
+                
             } else if (strcmp(cmd.command_list[0], "exit") == 0) {
                 free_command_line(&cmd);
-                break;	
-            } else {
-
+                break;
+            }  else {
                 write(STDOUT_FILENO, "Error! Unrecognized command: ", 29);
                 write(STDOUT_FILENO, cmd.command_list[0], strlen(cmd.command_list[0]));
                 write(STDOUT_FILENO, "\n", 1);
             }
+
             free_command_line(&cmd);
+        
         }
 
         fclose(fout);
