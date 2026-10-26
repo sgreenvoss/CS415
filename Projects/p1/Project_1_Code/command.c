@@ -177,7 +177,7 @@ void changeDir(char *dirName) /*for the cd command*/
 void copyFile(char *sourcePath, char *destinationPath) /*for the cp command*/
 {
 	int fd = open(sourcePath, O_RDONLY);
-	int ofd = open(destinationPath, O_WRONLY | O_CREAT);
+	int ofd = open(destinationPath, O_WRONLY | O_CREAT, 0644);
 	char* error_message = "";
 
 	if (fd < 0) {
@@ -223,13 +223,66 @@ void copyFile(char *sourcePath, char *destinationPath) /*for the cp command*/
 		free(buffer);
 		return;
 	} 
-	fchmod(ofd, 744);
 	close(fd); close(ofd);
 	free(buffer);
 }
 
 void moveFile(char *sourcePath, char *destinationPath) /*for the mv command*/
 {
+	int fd = open(sourcePath, O_WRONLY);
+	int ofd = open(destinationPath, O_WRONLY | O_CREAT, 0644);
+	char* error_message = "";
+
+	if (fd < 0) {
+		error_message = "Error: could not open source file.\n";
+	} else if (ofd < 0) {
+		error_message = "Error: could not open destination file\n";
+		close(fd);
+	}
+	if (strlen(error_message) != 0) {
+		write(STDOUT_FILENO, error_message, strlen(error_message));
+		return;
+	}
+
+	struct stat st;
+	if (fstat(fd, &st) == -1) {
+		error_message = "Error: could not retrieve file stats.\n";
+		write(STDOUT_FILENO, error_message, strlen(error_message));
+		close(fd); close(ofd);
+		return;
+	}
+
+	off_t file_size = st.st_size;
+	char* buffer = malloc(file_size + 1);
+	if (buffer == NULL) {
+		error_message = "Error: memory allocation failed.\n";
+		write(STDOUT_FILENO, error_message, strlen(error_message));
+		close(fd); close(ofd);
+		return;
+	}
+
+	if (read(fd, buffer, file_size) == -1) {
+		error_message = "Error: read failed.\n";
+		write(STDOUT_FILENO, error_message, strlen(error_message));
+		close(fd); close(ofd);
+		free(buffer);
+		return;
+	}
+
+	if (write(ofd, buffer, file_size) == -1) {
+		error_message = "Error: write failed.\n";
+		write(STDOUT_FILENO, error_message, strlen(error_message));
+		close(fd); close(ofd);
+		free(buffer);
+		return;
+	} 
+	
+	close(fd);
+	deleteFile(sourcePath);
+
+	close(ofd);
+	free(buffer);
+
 }
 
 void deleteFile(char *filename) /*for the rm command*/
