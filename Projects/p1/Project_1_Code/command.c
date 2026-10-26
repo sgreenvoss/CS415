@@ -276,7 +276,7 @@ void moveFile(char *sourcePath, char *destinationPath) /*for the mv command*/
 		free(buffer);
 		return;
 	} 
-	
+
 	close(fd);
 	deleteFile(sourcePath);
 
@@ -306,4 +306,36 @@ void deleteFile(char *filename) /*for the rm command*/
 
 void displayFile(char *filename) /*for the cat command*/
 {
+	int fd = open(filename, O_WRONLY);
+	if (fd < 0) {
+		writeMsg("Error: could not open file to cat.\n", STDOUT_FILENO);
+		return;
+	}
+
+	struct stat st;
+	if (fstat(fd, &st) == -1) {
+		writeMsg("Error: could not retrieve file stats.\n", STDOUT_FILENO);
+		close(fd);
+		return;
+	}
+
+	off_t file_size = st.st_size;
+	char* buffer = malloc(file_size + 1);
+	if (buffer == NULL) {
+		writeMsg("Error: memory allocation failed.\n", STDOUT_FILENO);
+		close(fd);
+		return;
+	}
+
+	if (read(fd, buffer, file_size) == -1) {
+		writeMsg("Error: read failed.\n", STDOUT_FILENO);
+		close(fd);
+		free(buffer);
+		return;
+	}
+
+	writeMsg(buffer, STDOUT_FILENO);
+
+	close(fd);
+	free(buffer);
 }
