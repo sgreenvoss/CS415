@@ -149,7 +149,7 @@ void showCurrentDir() /*for the pwd command*/
 
 void makeDir(char *dirName) 
 {
-	if (mkdir(dirName, 755) != 0) {
+	if (mkdir(dirName, 777) != 0) {
 		if (errno == EEXIST) {
 			char* message = "Error: Directory already exists.\n";
 			write(STDOUT_FILENO, message, strlen(message));
@@ -308,7 +308,7 @@ void moveFile(char *sourcePath, char *destinationPath) /*for the mv command*/
 
 void displayFile(char *filename) /*for the cat command*/
 {
-	int fd = open(filename, O_WRONLY);
+	int fd = open(filename, O_RDONLY);
 	if (fd < 0) {
 		writeMsg("Error: could not open file to cat.\n", STDOUT_FILENO);
 		return;
