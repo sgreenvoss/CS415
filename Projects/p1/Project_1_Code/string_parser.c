@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "string_parser.h"
+#include "helper.h"
 
 #define _GUN_SOURCE
 

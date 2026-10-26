@@ -34,6 +34,7 @@
 #include <dirent.h>
 #include <errno.h>
 #include <sys/stat.h>
+#include "helper.h"
 
 #define MAX_FILES 1024
 

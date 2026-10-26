@@ -1,0 +1,1 @@
+void writeMsg(char* error_msg, int loc);

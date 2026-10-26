@@ -5,10 +5,6 @@
 #include "command.h"
 #include "string_parser.h"
 
-void writeMsg(char* msg, int loc) {
-    write(loc, msg, strlen(msg));
-}
-
 int main(int argc, char* argv[]){
     size_t len = 1024;
     char *line = malloc(len * sizeof(char));
