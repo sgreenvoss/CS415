@@ -191,13 +191,12 @@ void copyFile(char *sourcePath, char *destinationPath) /*for the cp command*/
 	}
 
 	char fname[1024];
+	strcpy(fname, destinationPath);
+
 	if (S_ISDIR(d_st.st_mode)) {
 		// directory
-		fname = destinationPath;
 		strcat(fname, "/");
 		strcat(fname, basename(sourcePath));
-	} else {
-		fname = destinationPath;
 	}
 
 	ofd = open(fname, O_WRONLY | O_CREAT, 0644);
