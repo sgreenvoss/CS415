@@ -63,6 +63,7 @@ void listDir()
 	size_t size = 1024;
 	if (getcwd(cwd, size) == NULL) {
 		perror("getcwd");
+		return;
 	}
 
     /* TODO 2: Open the directory with opendir().
@@ -70,6 +71,7 @@ void listDir()
 	DIR* dir = opendir(cwd);
 	if (dir == NULL) {
 		perror("Not a valid directory");
+		return;
 	}
 
     /* A growable array of file names. It starts empty and grows by one
@@ -180,19 +182,22 @@ void copyFile(char *sourcePath, char *destinationPath) /*for the cp command*/
 	// what is the dest path? directory or file?
 	struct stat d_st; //dest stat
 	if (stat(destinationPath, &d_st) == -1) {
-		error_message = "Error: could not retrieve file stats.\n";
-		write(STDOUT_FILENO, error_message, strlen(error_message));
-		close(fd);
-		return;
+		if (errno != ENOENT) {
+			error_message = "Error: could not retrieve file stats.\n";
+			write(STDOUT_FILENO, error_message, strlen(error_message));
+			close(fd);
+			return;
+		}
 	}
 
-	char* fname;
+	char fname[1024];
 	if (S_ISDIR(d_st.st_mode)) {
 		// directory
-		char* fname = strdup(destinationPath);
-		ofd = open(strcat(fname, basename(sourcePath)), O_WRONLY | O_CREAT, 0644);
+		fname = destinationPath;
+		strcat(fname, "/");
+		strcat(fname, basename(sourcePath));
 	} else {
-		fname = strdup(destinationPath);
+		fname = destinationPath;
 	}
 
 	ofd = open(fname, O_WRONLY | O_CREAT, 0644);
@@ -215,8 +220,6 @@ void copyFile(char *sourcePath, char *destinationPath) /*for the cp command*/
 		close(fd); close(ofd);
 		return;
 	}
-	// figure out what type of destination this is
-
 
 	off_t file_size = st.st_size;
 	char* buffer = malloc(file_size + 1);
