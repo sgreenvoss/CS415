@@ -120,6 +120,7 @@ int main(int argc, char* argv[]){
         fin = fopen(argv[2], "r");
         if (fin == NULL) {
             perror("File cannot be opened");
+            free(line);
             exit(1);
         }
 

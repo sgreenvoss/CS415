@@ -385,7 +385,6 @@ void displayFile(char *filename) /*for the cat command*/
 	}
 
 	write(STDOUT_FILENO, buffer, file_size);
-	write(STDOUT_FILENO, "\n", 1);
 	
 	close(fd);
 	free(buffer);
