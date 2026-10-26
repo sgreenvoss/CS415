@@ -97,15 +97,10 @@ void listDir()
 			perror("lstat");
 			// free stuff here
 			exit(1);
-		} else {
-			if (!S_ISREG(sb.st_mode)) continue;
-			if (entry->d_name[0] == '.') continue;	
-		}
-
-		if (strcmp("output.txt", entry->d_name) == 0 || 
-		    strcmp("output_reference.txt", entry->d_name) == 0) {
-			continue;
-		}
+		} //else {
+			// if (!S_ISREG(sb.st_mode)) continue;
+			// if (entry->d_name[0] == '.') continue;	
+		//}
 
 		file_count += 1;
 	       	if (file_count > MAX_FILES) break;
@@ -178,7 +173,26 @@ void changeDir(char *dirName) /*for the cd command*/
 void copyFile(char *sourcePath, char *destinationPath) /*for the cp command*/
 {
 	int fd = open(sourcePath, O_RDONLY);
-	int ofd = open(destinationPath, O_WRONLY | O_CREAT, 0644);
+
+	// what is the dest path? directory or file?
+	struct stat d_st; //dest stat
+	if (stat(destinationPath, &d_st) == -1) {
+		error_message = "Error: could not retrieve file stats.\n";
+		write(STDOUT_FILENO, error_message, strlen(error_message));
+		close(fd);
+		return;
+	}
+
+	char* fname;
+	if (S_IFDIR(d_st.st_mode)) {
+		// directory
+		char* fname = strdup(destinationPath);
+		ofd = open(strcat(fname, basename(sourcePath)), O_WRONLY | O_CREAT, 0644);
+	} else {
+		fname = strdup(destinationPath);
+	}
+
+	int ofd = open(fname, O_WRONLY | O_CREAT, 0644);
 
 	char* error_message = "";
 
@@ -192,22 +206,16 @@ void copyFile(char *sourcePath, char *destinationPath) /*for the cp command*/
 		write(STDOUT_FILENO, error_message, strlen(error_message));
 		return;
 	}
-	struct stat d_st; // dest stat
 
 	struct stat st;
-	if (fstat(fd, &st) == -1 || fstat(ofd, &d_st) == -1) {
+	if (fstat(fd, &st) == -1 || f) {
 		error_message = "Error: could not retrieve file stats.\n";
 		write(STDOUT_FILENO, error_message, strlen(error_message));
 		close(fd); close(ofd);
 		return;
 	}
 	// figure out what type of destination this is
-	if (d_st.st_mode == S_IFDIR) {
-		// directory
-		close(ofd);
-		char* fname = destinationPath;
-		ofd = open(strcat(fname, basename(sourcePath)), O_WRONLY | O_CREAT, 0644);
-	}
+
 
 	off_t file_size = st.st_size;
 	char* buffer = malloc(file_size + 1);
@@ -246,7 +254,7 @@ void deleteFile(char *filename) /*for the rm command*/
 		return;
 	}
 
-	if (sb.st_mode == S_IFDIR) {
+	if (S_IFDIR(sb.st_mode)) {
 		writeMsg("Error: cannot remove directory.\n", STDOUT_FILENO);
 		return;
 	}
@@ -258,7 +266,7 @@ void deleteFile(char *filename) /*for the rm command*/
 
 void moveFile(char *sourcePath, char *destinationPath) /*for the mv command*/
 {
-	int fd = open(sourcePath, O_WRONLY);
+	int fd = open(sourcePath, O_RDONLY);
 	int ofd = open(destinationPath, O_WRONLY | O_CREAT, 0644);
 	char* error_message = "";
 
