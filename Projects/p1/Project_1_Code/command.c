@@ -173,7 +173,10 @@ void changeDir(char *dirName) /*for the cd command*/
 void copyFile(char *sourcePath, char *destinationPath) /*for the cp command*/
 {
 	int fd = open(sourcePath, O_RDONLY);
+	int ofd;
 
+	char* error_message = "";
+	
 	// what is the dest path? directory or file?
 	struct stat d_st; //dest stat
 	if (stat(destinationPath, &d_st) == -1) {
@@ -184,7 +187,7 @@ void copyFile(char *sourcePath, char *destinationPath) /*for the cp command*/
 	}
 
 	char* fname;
-	if (S_IFDIR(d_st.st_mode)) {
+	if (S_ISDIR(d_st.st_mode)) {
 		// directory
 		char* fname = strdup(destinationPath);
 		ofd = open(strcat(fname, basename(sourcePath)), O_WRONLY | O_CREAT, 0644);
@@ -192,9 +195,7 @@ void copyFile(char *sourcePath, char *destinationPath) /*for the cp command*/
 		fname = strdup(destinationPath);
 	}
 
-	int ofd = open(fname, O_WRONLY | O_CREAT, 0644);
-
-	char* error_message = "";
+	ofd = open(fname, O_WRONLY | O_CREAT, 0644);
 
 	if (fd < 0) {
 		error_message = "Error: could not open source file.\n";
@@ -208,7 +209,7 @@ void copyFile(char *sourcePath, char *destinationPath) /*for the cp command*/
 	}
 
 	struct stat st;
-	if (fstat(fd, &st) == -1 || f) {
+	if (fstat(fd, &st) == -1) {
 		error_message = "Error: could not retrieve file stats.\n";
 		write(STDOUT_FILENO, error_message, strlen(error_message));
 		close(fd); close(ofd);
@@ -254,7 +255,7 @@ void deleteFile(char *filename) /*for the rm command*/
 		return;
 	}
 
-	if (S_IFDIR(sb.st_mode)) {
+	if (S_ISDIR(sb.st_mode)) {
 		writeMsg("Error: cannot remove directory.\n", STDOUT_FILENO);
 		return;
 	}
