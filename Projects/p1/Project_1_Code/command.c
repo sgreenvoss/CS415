@@ -239,7 +239,7 @@ void deleteFile(char *filename) /*for the rm command*/
 		writeError("Error: could not stat file.\n", STDOUT_FILENO);
 	}
 
-	if (S_IFDIR(sb.st_mode)) {
+	if (sb.st_mode == S_IFDIR) {
 		writeError("Error: cannot remove directory.\n", STDOUT_FILENO);
 	}
 

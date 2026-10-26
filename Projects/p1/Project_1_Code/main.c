@@ -48,37 +48,32 @@ int main(int argc, char* argv[]){
             if (strcmp(cmd.command_list[0], "ls") == 0) {
                 if (cmd.num_token > 1) {
                     writeError("Error: too many arguments for ls.\n", STDOUT_FILENO);
-                }
-
-                listDir();
+                } else listDir();
 
             } else if (strcmp(cmd.command_list[0], "pwd") == 0) {
                 if (cmd.num_token > 1) {
                     writeError("Error: too many arguments for pwd.\n", STDOUT_FILENO);
-                }
-
-                showCurrentDir();
+                } else showCurrentDir();
 
             } else if (strcmp(cmd.command_list[0], "mkdir") == 0) {
                 if (cmd.num_token != 2) {
                     writeError("Error: incorrect number of parameters for mkdir.\n", STDOUT_FILENO);
-                }
-
-                makeDir(cmd.command_list[1]);
+                } else makeDir(cmd.command_list[1]);
 
             } else if (strcmp(cmd.command_list[0], "cd") == 0) {
                 if (cmd.num_token != 2) {
                     writeError("Error: incorrect number of parameters for cd.\n", STDOUT_FILENO);
-                }
-
-                changeDir(cmd.command_list[1]);
+                } else changeDir(cmd.command_list[1]);
 
             } else if (strcmp(cmd.command_list[0], "cp") == 0) {
                 if (cmd.num_token != 3) {
                     writeError("Error: incorrect number of parameters for cp.\n", STDOUT_FILENO);
-                }
+                } else copyFile(cmd.command_list[1], cmd.command_list[2]);
 
-                copyFile(cmd.command_list[1], cmd.command_list[2]);
+            } else if (strcmp(cmd.command_list[0], "rm") == 0) {
+                if (cmd.num_token != 2) {
+                    writeError("Error: incorrect number of parameters for rm.\n", STDOUT_FILENO);
+                } else deleteFile(cmd.command_list[1]);
 
             } else if (strcmp(cmd.command_list[0], "exit") == 0) {
                 free_command_line(&cmd);
@@ -140,38 +135,33 @@ int main(int argc, char* argv[]){
             if (strcmp(cmd.command_list[0], "ls") == 0) {
                 if (cmd.num_token > 1) {
                     writeError("Error: too many arguments for ls.\n", STDOUT_FILENO);
-                }
-
-                listDir();
+                } else listDir();
 
             } else if (strcmp(cmd.command_list[0], "pwd") == 0) {
                 if (cmd.num_token > 1) {
                     writeError("Error: too many arguments for pwd.\n", STDOUT_FILENO);
-                }
-
-                showCurrentDir();
+                } else showCurrentDir();
 
             } else if (strcmp(cmd.command_list[0], "mkdir") == 0) {
                 if (cmd.num_token != 2) {
                     writeError("Error: incorrect number of parameters for mkdir.\n", STDOUT_FILENO);
-                }
-
-                makeDir(cmd.command_list[1]);
+                } else makeDir(cmd.command_list[1]);
 
             } else if (strcmp(cmd.command_list[0], "cd") == 0) {
                 if (cmd.num_token != 2) {
                     writeError("Error: incorrect number of parameters for cd.\n", STDOUT_FILENO);
-                }
-
-                changeDir(cmd.command_list[1]);
+                } else changeDir(cmd.command_list[1]);
 
             } else if (strcmp(cmd.command_list[0], "cp") == 0) {
                 if (cmd.num_token != 3) {
                     writeError("Error: incorrect number of parameters for cp.\n", STDOUT_FILENO);
-                }
+                } else copyFile(cmd.command_list[1], cmd.command_list[2]);
 
-                copyFile(cmd.command_list[1], cmd.command_list[2]);
-                
+            } else if (strcmp(cmd.command_list[0], "rm") == 0) {
+                if (cmd.num_token != 2) {
+                    writeError("Error: incorrect number of parameters for rm.\n", STDOUT_FILENO);
+                } else deleteFile(cmd.command_list[1]);
+
             } else if (strcmp(cmd.command_list[0], "exit") == 0) {
                 free_command_line(&cmd);
                 break;
