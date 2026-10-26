@@ -193,6 +193,7 @@ void copyFile(char *sourcePath, char *destinationPath) /*for the cp command*/
 	char fname[1024];
 	strcpy(fname, destinationPath);
 
+	// handle case if destination path is a directory
 	if (S_ISDIR(d_st.st_mode)) {
 		// directory
 		strcat(fname, "/");
@@ -203,12 +204,12 @@ void copyFile(char *sourcePath, char *destinationPath) /*for the cp command*/
 
 	if (fd < 0) {
 		error_message = "Error: could not open source file.\n";
+		writeMsg(error_message, STDOUT_FILENO);
+		return;
 	} else if (ofd < 0) {
 		error_message = "Error: could not open destination file\n";
+		writeMsg(error_message, STDOUT_FILENO);
 		close(fd);
-	}
-	if (strlen(error_message) != 0) {
-		write(STDOUT_FILENO, error_message, strlen(error_message));
 		return;
 	}
 
@@ -270,17 +271,41 @@ void deleteFile(char *filename) /*for the rm command*/
 void moveFile(char *sourcePath, char *destinationPath) /*for the mv command*/
 {
 	int fd = open(sourcePath, O_RDONLY);
-	int ofd = open(destinationPath, O_WRONLY | O_CREAT, 0644);
+	int ofd;
+
 	char* error_message = "";
+	
+	// what is the dest path? directory or file?
+	struct stat d_st; //dest stat
+	if (stat(destinationPath, &d_st) == -1) {
+		if (errno != ENOENT) {
+			error_message = "Error: could not retrieve file stats.\n";
+			write(STDOUT_FILENO, error_message, strlen(error_message));
+			close(fd);
+			return;
+		}
+	}
+	
+	char fname[1024];
+	strcpy(fname, destinationPath);
+
+	// handle case if destination path is a directory
+	if (S_ISDIR(d_st.st_mode)) {
+		// directory
+		strcat(fname, "/");
+		strcat(fname, basename(sourcePath));
+	}
+
+	ofd = open(fname, O_WRONLY | O_CREAT, 0644);
 
 	if (fd < 0) {
 		error_message = "Error: could not open source file.\n";
+		writeMsg(error_message, STDOUT_FILENO);
+		return;
 	} else if (ofd < 0) {
 		error_message = "Error: could not open destination file\n";
+		writeMsg(error_message, STDOUT_FILENO);
 		close(fd);
-	}
-	if (strlen(error_message) != 0) {
-		write(STDOUT_FILENO, error_message, strlen(error_message));
 		return;
 	}
 
