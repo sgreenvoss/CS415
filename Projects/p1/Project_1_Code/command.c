@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <libgen.h>
 #include <fcntl.h>
 #include <string.h>
 #include <dirent.h>
@@ -201,11 +202,11 @@ void copyFile(char *sourcePath, char *destinationPath) /*for the cp command*/
 		return;
 	}
 	// figure out what type of destination this is
-	if (d_st.st_mode == S_ISDIR) {
+	if (d_st.st_mode == S_IFDIR) {
 		// directory
 		close(ofd);
 		char* fname = destinationPath;
-		ofd = open(strcat(fname, basename(sourcePath)), O_WRONLY | OCREAT, 0644);
+		ofd = open(strcat(fname, basename(sourcePath)), O_WRONLY | O_CREAT, 0644);
 	}
 
 	off_t file_size = st.st_size;
