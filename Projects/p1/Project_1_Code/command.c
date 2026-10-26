@@ -178,6 +178,9 @@ void copyFile(char *sourcePath, char *destinationPath) /*for the cp command*/
 	int ofd;
 
 	char* error_message = "";
+
+	char fname[1024];
+	strcpy(fname, destinationPath);
 	
 	// what is the dest path? directory or file?
 	struct stat d_st; //dest stat
@@ -188,17 +191,16 @@ void copyFile(char *sourcePath, char *destinationPath) /*for the cp command*/
 			close(fd);
 			return;
 		}
+	} else {
+		// it does exist, maybe it's a directory
+		if (S_ISDIR(d_st.st_mode)) {
+			// directory
+			strcat(fname, "/");
+			strcat(fname, basename(sourcePath));
+		}
 	}
-
-	char fname[1024];
-	strcpy(fname, destinationPath);
 
 	// handle case if destination path is a directory
-	if (S_ISDIR(d_st.st_mode)) {
-		// directory
-		strcat(fname, "/");
-		strcat(fname, basename(sourcePath));
-	}
 
 	ofd = open(fname, O_WRONLY | O_CREAT, 0644);
 
@@ -275,6 +277,9 @@ void moveFile(char *sourcePath, char *destinationPath) /*for the mv command*/
 
 	char* error_message = "";
 	
+	char fname[1024];
+	strcpy(fname, destinationPath);
+
 	// what is the dest path? directory or file?
 	struct stat d_st; //dest stat
 	if (stat(destinationPath, &d_st) == -1) {
@@ -283,17 +288,14 @@ void moveFile(char *sourcePath, char *destinationPath) /*for the mv command*/
 			write(STDOUT_FILENO, error_message, strlen(error_message));
 			close(fd);
 			return;
+		} 
+	} else {
+		// handle case if destination path is a directory
+		if (S_ISDIR(d_st.st_mode)) {
+			// directory
+			strcat(fname, "/");
+			strcat(fname, basename(sourcePath));
 		}
-	}
-	
-	char fname[1024];
-	strcpy(fname, destinationPath);
-
-	// handle case if destination path is a directory
-	if (S_ISDIR(d_st.st_mode)) {
-		// directory
-		strcat(fname, "/");
-		strcat(fname, basename(sourcePath));
 	}
 
 	ofd = open(fname, O_WRONLY | O_CREAT, 0644);
