@@ -49,6 +49,8 @@ int main(int argc, char* argv[]){
                 makeDir(cmd.command_list[1]);
             } else if (strcmp(cmd.command_list[0], "cd") == 0) {
                 changeDir(cmd.command_list[1]);
+            } else if (strcmp(cmd.command_list[0], "cp") == 0) {
+                copyFile(cmd.command_list[1], cmd.command_list[2]);
             } else if (strcmp(cmd.command_list[0], "exit") == 0) {
                 free_command_line(&cmd);
                 break;

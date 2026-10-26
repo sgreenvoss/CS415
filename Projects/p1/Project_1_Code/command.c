@@ -158,18 +158,67 @@ void changeDir(char *dirName) /*for the cd command*/
 	if (chdir(dirName) != 0) {
 		char* error_message;
 		if (errno == ENOENT) {
-			error_message = "Error: Directory does not exist.\n";)
+			error_message = "Error: Directory does not exist.\n";
 		} else if (errno == EACCES) {
 			error_message = "Error: Permission denied.\n";
 		} else {
 			error_message = "Error opening directory.\n";
 		}
-		write(STDOUT_FILENO, message, strlen(message));
+		write(STDOUT_FILENO, error_message, strlen(error_message));
 	}
 }
 
 void copyFile(char *sourcePath, char *destinationPath) /*for the cp command*/
 {
+	int fd = open(sourcePath, O_RDONLY);
+	int ofd = open(destinationPath, O_WRONLY | O_CREAT);
+	char* error_message;
+
+	if (fd < 0) {
+		error_message = "Error: could not open source file.\n";
+	} else if (ofd < 0) {
+		error_message = "Error: could not open destination file\n";
+		close(fd);
+	}
+	if (error_message) {
+		write(STDOUT_FILENO, error_message, strlen(error_message));
+		return;
+	}
+
+	struct stat st;
+	if (fstat(fd, &st) == -1) {
+		error_message = "Error: could not retrieve file stats.\n";
+		write(STDOUT_FILENO, error_message, strlen(error_message));
+		close(fd); close(ofd);
+		return;
+	}
+
+	off_t file_size = st.st_size;
+	char* buffer = malloc(file_size + 1);
+	if (buffer == NULL) {
+		error_message = "Error: memory allocation failed.\n";
+		write(STDOUT_FILENO, error_message, strlen(error_message));
+		close(fd); close(ofd);
+		return;
+	}
+
+	if (read(fd, buffer, file_size) == -1) {
+		error_message = "Error: read failed.\n";
+		write(STDOUT_FILENO, error_message, strlen(error_message));
+		close(fd); close(ofd);
+		free(buffer);
+		return;
+	}
+
+	if (write(ofd, buffer, file_size) == -1) {
+		error_message = "Error: write failed.\n";
+		write(STDOUT_FILENO, error_message, strlen(error_message));
+		close(fd); close(ofd);
+		free(buffer);
+		return;
+	} 
+	close(fd); close(ofd);
+	free(buffer);
 }
 
 void moveFile(char *sourcePath, char *destinationPath) /*for the mv command*/
