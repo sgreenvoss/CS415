@@ -107,7 +107,7 @@ int main(int argc, char* argv[])
 
 			// print: Child Process: <pid> - Waiting for SIGUSR1...
 			//   e.g. printf("Child Process: %d - Waiting for SIGUSR1...\n", getpid());
-			printf("Child process: %d - waiting for SIGUSR1...\n", getpid());
+			printf("Child process: %d - Waiting for SIGUSR1...\n", getpid());
 
 			// wait for the signal
 			//   - Call sigwait(&sigset, &sig);
@@ -123,8 +123,10 @@ int main(int argc, char* argv[])
 			//   Tip: stdout may be buffered; call fflush(stdout) before exec(),
 			//   otherwise text still sitting in the buffer is lost when exec()
 			//   replaces the process image.
-			printf("Child Process: %d - Received signal: SIGUSR1 - calling exec().\n", getpid());
+			printf("Child Process: %d - Received signal: SIGUSR1 - Calling exec().\n", getpid());
 			fflush(stdout);
+			
+			signal(SIGINT, SIG_DFL);
 
 			// call execvp with ./iobound like in lab 4
 			//   - execvp(args[0], args);   (args is declared above main's loop)
@@ -188,6 +190,7 @@ void signaler(pid_t* pid_ary, int size, int signal) {
 	// sleep for three seconds
 	//   - sleep(3);  gives the children time to reach sigwait() / run iobound
 	//     before the next round of signals is sent.
+	sleep(3);
 
 	for(int i = 0; i < size; i++)
 	{
