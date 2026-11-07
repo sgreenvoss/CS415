@@ -43,15 +43,16 @@
 void read_memory(pid_t pid) {
     long vmrss = -1, vmsize = -1;
 
-    char pathname[255];
+    int pathname_max = 255;
+    char pathname[pathname_max];
 
     // TODO 1: Build the path "/proc/<pid>/status" (hint: snprintf).
-    if (snprintf(pathname, "/proc/%d/status", pid) < 0) {
+    if (snprintf(pathname_max, pathname, "/proc/%d/status", pid) < 0) {
         perror("Building path");
     };
     // TODO 2: Open the file with fopen(). If it fails, print an error
     //         with perror() and return.
-    FILE proc_status = fopen(pathname, "r");
+    FILE* proc_status = fopen(pathname, "r");
 
     if (proc_status == NULL) {
         perror("Couldn't open file");
@@ -65,7 +66,7 @@ void read_memory(pid_t pid) {
     int line_max = 512; // setting low just for now, can revise later
     char line[line_max];
 
-    while (fgets(line, line_max + 1, &proc_status) != NULL) {
+    while (fgets(line, line_max + 1, proc_status) != NULL) {
         if (strncmp("VmSize", line, 6) == 0) {
             sscanf(line, "VmSize:     %d kB", vmsize);
         } else if (strncmp("VmRSS", line, 5) == 0) {
@@ -94,11 +95,26 @@ void read_memory(pid_t pid) {
 // See "man 5 proc" for the full list and each field's type.
 void read_time(pid_t pid) {
     double total_sec = 0.0;
+    double utime = 0.0, stime = 0.0;
 
     // TODO 1: Build the path "/proc/<pid>/stat" and open it.
     //         Handle the error case as in read_memory().
+    int pathname_max = 255;
+    char pathname[pathname_max];
+
+    if (snprintf(pathname_max, pathname, "/proc/%d/stat", pid) < 0) {
+        perror("Building path");
+    };
+
+    FILE* proc_stat = fopen(pathname, "r");
 
     // TODO 2: Read the whole line into a buffer (hint: fgets).
+    int buf_max = 512;
+    char buf[buf_max];
+
+    if (fgets(buf, buf_max + 1, proc_stat) == NULL) {
+        perror("Reading file");
+    }
 
     // TODO 3: Extract utime (field 14) and stime (field 15).
     //         Hint: in sscanf, "%*d" or "%*s" reads a field and discards it,
