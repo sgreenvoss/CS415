@@ -47,7 +47,7 @@ void read_memory(pid_t pid) {
     char pathname[pathname_max];
 
     // TODO 1: Build the path "/proc/<pid>/status" (hint: snprintf).
-    if (snprintf(pathname_max, pathname, "/proc/%d/status", pid) < 0) {
+    if (snprintf(pathname, pathname_max, "/proc/%d/status", pid) < 0) {
         perror("Building path");
     };
     // TODO 2: Open the file with fopen(). If it fails, print an error
@@ -66,7 +66,7 @@ void read_memory(pid_t pid) {
     int line_max = 512; // setting low just for now, can revise later
     char line[line_max];
 
-    while (fgets(line, line_max + 1, proc_status) != NULL) {
+    while (fgets(line, line_max, proc_status) != NULL) {
         if (strncmp("VmSize", line, 6) == 0) {
             sscanf(line, "VmSize:     %d kB", vmsize);
         } else if (strncmp("VmRSS", line, 5) == 0) {
@@ -102,7 +102,7 @@ void read_time(pid_t pid) {
     int pathname_max = 255;
     char pathname[pathname_max];
 
-    if (snprintf(pathname_max, pathname, "/proc/%d/stat", pid) < 0) {
+    if (snprintf(pathname, pathname_max, "/proc/%d/stat", pid) < 0) {
         perror("Building path");
     };
 
@@ -112,7 +112,7 @@ void read_time(pid_t pid) {
     int buf_max = 512;
     char buf[buf_max];
 
-    if (fgets(buf, buf_max + 1, proc_stat) == NULL) {
+    if (fgets(buf, buf_max, proc_stat) == NULL) {
         perror("Reading file");
     }
 
