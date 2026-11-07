@@ -68,9 +68,13 @@ void read_memory(pid_t pid) {
 
     while (fgets(line, line_max, proc_status) != NULL) {
         if (strncmp("VmSize", line, 6) == 0) {
-            sscanf(line, "VmSize:     %d kB", vmsize);
+            int size = 0;
+            sscanf(line, "VmSize:     %d kB", size);
+            printf("assigned %d to size\n", size);
         } else if (strncmp("VmRSS", line, 5) == 0) {
-            sscanf(line, "VmRSS:      %d kB", vmrss);
+            int the_size = 0;
+            sscanf(line, "VmRSS:      %d kB", the_size);
+            printf("assigned %d to the_size\n", the_size);
         }
     }
 
