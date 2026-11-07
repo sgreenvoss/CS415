@@ -43,7 +43,7 @@
 void read_memory(pid_t pid) {
     long vmrss = -1, vmsize = -1;
 
-    char[255] pathname;
+    char pathname[255];
 
     // TODO 1: Build the path "/proc/<pid>/status" (hint: snprintf).
     if (snprintf(pathname, "/proc/%d/status", pid) < 0) {
@@ -51,7 +51,7 @@ void read_memory(pid_t pid) {
     };
     // TODO 2: Open the file with fopen(). If it fails, print an error
     //         with perror() and return.
-    FILE proc_status = fopen(pathname, 'r');
+    FILE proc_status = fopen(pathname, "r");
 
     if (proc_status == NULL) {
         perror("Couldn't open file");
@@ -63,9 +63,9 @@ void read_memory(pid_t pid) {
     //           - if it starts with "VmRSS",  parse the number into vmrss
     //         (hint: strncmp to match the prefix, sscanf to parse the value)
     int line_max = 512; // setting low just for now, can revise later
-    char[line_max] line;
+    char line[line_max];
 
-    while (fgets(line, line_max + 1, proc_status) != NULL) {
+    while (fgets(line, line_max + 1, &proc_status) != NULL) {
         if (strncmp("VmSize", line, 6) == 0) {
             sscanf(line, "VmSize:     %d kB", vmsize);
         } else if (strncmp("VmRSS", line, 5) == 0) {
