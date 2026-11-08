@@ -68,13 +68,9 @@ void read_memory(pid_t pid) {
 
     while (fgets(line, line_max, proc_status) != NULL) {
         if (strncmp("VmSize", line, 6) == 0) {
-            int size = 0;
-            sscanf(line, "VmSize:     %d kB", size);
-            printf("assigned %d to size\n", size);
+            sscanf(line, "VmSize:     %ld kB", &vmsize);
         } else if (strncmp("VmRSS", line, 5) == 0) {
-            int the_size = 0;
-            sscanf(line, "VmRSS:      %d kB", the_size);
-            printf("assigned %d to the_size\n", the_size);
+            sscanf(line, "VmRSS:      %ld kB", &vmrss);
         }
     }
 
@@ -112,29 +108,43 @@ void read_time(pid_t pid) {
 
     FILE* proc_stat = fopen(pathname, "r");
 
+    if (proc_stat == NULL) {
+        perror("Couldn't open file");
+        return;
+    }
+
     // TODO 2: Read the whole line into a buffer (hint: fgets).
-    int buf_max = 512;
+    int buf_max = 4098;
     char buf[buf_max];
 
     if (fgets(buf, buf_max, proc_stat) == NULL) {
         perror("Reading file");
     }
+    printf(buf);
 
     // TODO 3: Extract utime (field 14) and stime (field 15).
     //         Hint: in sscanf, "%*d" or "%*s" reads a field and discards it,
     //         so you can skip the first 13 fields.
 
-    sscanf(buf,
+    int res = sscanf(buf,
            "%*d %*s %*c "
            "%*d %*d %*d %*d %*d "
            "%*u %*u %*u %*u %*u "
            "%ld %ld",
            &utime, &stime);
+    if (res != 2) {
+        printf("issue with sscanf, it is %d\n", res);
+    }
 
     // TODO 4: utime and stime are in clock ticks. Convert their sum to seconds.
     //         Hint: sysconf(_SC_CLK_TCK) gives the number of ticks per second.
+    printf("sysconf result is %i\n", sysconf(_SC_CLK_TCK));
+    printf("utime, stime are %f, %f\n", utime, stime);
+    total_sec = (utime + stime) / (double) sysconf(_SC_CLK_TCK);
 
     // TODO 5: Close the file.
+
+    fclose(proc_stat);
 
     printf("[CPU] Total CPU time: %.4f sec\n", total_sec);
 }
