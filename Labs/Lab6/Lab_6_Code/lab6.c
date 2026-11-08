@@ -120,26 +120,21 @@ void read_time(pid_t pid) {
     if (fgets(buf, buf_max, proc_stat) == NULL) {
         perror("Reading file");
     }
-    printf(buf);
 
     // TODO 3: Extract utime (field 14) and stime (field 15).
     //         Hint: in sscanf, "%*d" or "%*s" reads a field and discards it,
     //         so you can skip the first 13 fields.
 
-    int res = sscanf(buf,
+    sscanf(buf,
            "%*d %*s %*c "
            "%*d %*d %*d %*d %*d "
            "%*u %*u %*u %*u %*u "
-           "%ld %ld",
+           "%lf %lf",
            &utime, &stime);
-    if (res != 2) {
-        printf("issue with sscanf, it is %d\n", res);
-    }
 
     // TODO 4: utime and stime are in clock ticks. Convert their sum to seconds.
     //         Hint: sysconf(_SC_CLK_TCK) gives the number of ticks per second.
-    printf("sysconf result is %i\n", sysconf(_SC_CLK_TCK));
-    printf("utime, stime are %f, %f\n", utime, stime);
+
     total_sec = (utime + stime) / (double) sysconf(_SC_CLK_TCK);
 
     // TODO 5: Close the file.
@@ -168,9 +163,34 @@ void read_io(pid_t pid) {
 
     // TODO 1: Build the path "/proc/<pid>/io" and open it.
     //         Handle the error case as in read_memory().
+    int pathname_max = 255;
+    char pathname[pathname_max];
+
+    if (snprintf(pathname, pathname_max, "/proc/%d/io", pid) < 0) {
+        perror("Building path");
+    };
+
+    FILE* proc_io = fopen(pathname, "r");
+
+    if (proc_io == NULL) {
+        perror("Couldn't open file");
+        return;
+    }
 
     // TODO 2: Read line by line and parse "read_bytes" into read_b
     //         and "write_bytes" into write_b.
+    int line_max = 512;
+    char line[line_max];
+
+    while (fgets(line, line_max, proc_io) != NULL) {
+        if (strncmp("read_bytes", line, 10) == 0) {
+            sscanf(line, "read_bytes: %ld", &read_b);
+        } else if (strncmp("write_bytes", line, 11) == 0) {
+            sscanf(line, "write_bytes: %ld", &write_b);
+        }
+    }
+
+    fclose(proc_io);
 
     // TODO 3: Close the file.
 
