@@ -75,11 +75,21 @@ int main(int argc, char *argv[])
     //         then rewind() the file so you can read it again.
     int line_number = 0;
 
+    while ((read = getline(&line, &len, input)) != -1) {
+        line_number += 1;
+    }
+
+    rewind(input);
 
     // TODO 2: Allocate an array to hold one pid_t per command.
     //         Remember to check the return value of malloc().
     pid_t *pid_array = NULL;
+    pid_array = malloc(sizeof(pid_t*) * line_number);
 
+    if (pid_array == NULL) {
+	    perror("malloc");
+	    return 1;
+    }
 
     // Launch one process per line
     for (int i = 0; i < line_number; i++) {
@@ -88,8 +98,9 @@ int main(int argc, char *argv[])
             break;
         }
 
-        // TODO 3: Remove the trailing newline character (if any).
 
+        // TODO 3: Remove the trailing newline character (if any).
+        line[strcspn(line, "\n")] = '\0';
 
         // TODO 4: Split the line into tokens (strtok with " ") and store
         //         them in args[]. The array must end with a NULL pointer,
@@ -97,22 +108,45 @@ int main(int argc, char *argv[])
         char *args[MAX_ARGS];
         int arg_index = 0;
 
-        args[arg_index] = NULL;
+        args[arg_index] = strtok(line, " ");
+        arg_index++;
+        
+        while ((args[arg_index] = strtok(NULL, " ")) != NULL){
+            arg_index++;
+        }
+
+        args[++arg_index] = NULL;
 
         // TODO 5: fork() a child process and save its pid in pid_array[i].
-        //
+        pid_array[i] = fork();
+
         //   - If fork() fails (< 0): report the error with perror(),
         //     free resources, and exit(EXIT_FAILURE).
-        //
+        if (pid_array[i] < 0) {
+            perror("Fork");
+            free(line);
+            free(pid_array);
+            fclose(input);
+            exit(EXIT_FAILURE);
+        }
         //   - In the child (== 0): call execvp(args[0], args).
         //     execvp() only returns on failure. In that case:
         //         perror("Execvp");
         //     then free memory, close the file, and exit(EXIT_FAILURE).
         //     (Why must the child exit here? What happens if it doesn't?)
-        //
+        else if (pid_array[i] == 0) {
+            execvp(args[0], args);
+            perror("Execvp");
+            free(line);
+            free(pid_array);
+            fclose(input);
+            exit(EXIT_FAILURE);
+        } 
         //   - In the parent (> 0): do NOT wait here! Continue the loop so
         //     that all processes run at the same time.
-        //
+        else {
+            continue;
+        }
         //   (Part 2 hint: this child branch is where the child will later
         //    sigwait() for SIGUSR1 before calling execvp().)
 
@@ -120,13 +154,18 @@ int main(int argc, char *argv[])
 
     // TODO 6: Now that every process has been launched, wait for each
     //         child to terminate using waitpid() on pid_array[i].
-    //
+    int status;
+    for (int i = 0; i < line_number; i++) {
+        waitpid(pid_array[i], NULL, 1);
+    }
     //   (Part 2/3 hint: the signaling and scheduling logic for later parts
     //    goes here, between launching the children and the final cleanup.)
 
 
     // TODO 7: Clean up: free line and pid_array, close the input file.
     fclose(input);
+    free(line);
+    free(pid_array);
 
     exit(EXIT_SUCCESS);
 
