@@ -1,33 +1,13 @@
 /*
  * CIS 415 - Project 2, Part 2: MCP Launches the Workload (MCP v1.0)
  *
- * Usage: ./part1 -f <input_file>
+ * Usage: ./part2 -f <input_file>
  *
  * Each line of the input file is a command plus its arguments, e.g.
  *     ls -a -r
  *     sleep 1
  *     ./iobound -seconds 10
  *
- * Your MCP v1.0 must:
- *   1. Read every command from the input file.
- *   2. For each command, fork() a child that runs it with execvp().
- *   3. After ALL children have been launched, wait for each one (waitpid).
- *   4. Free all memory, close the file, and exit().
- *
- * Notes on output (the test script compares output character by character):
- *   - Do NOT print extra debug messages in your final submission.
- *   - If execvp() fails, report it with exactly: perror("Execvp");
- *   - Bad arguments must print exactly:
- *         "Invalid use: incorrect number of parameters\n"
- *
- * Always check your code with valgrind:
- *     valgrind --leak-check=full ./part1 -f input.txt
- *
- * Looking ahead: Parts 2, 3, 4 and 5 are completed by EXTENDING this file.
- * Once part1 works (and is valgrind-clean), copy it to part2.c and build on
- * it, then copy part2.c to part3.c, and so on. Keep the code clean and
- * modular now (e.g. a helper that parses a line into args[]) so that later
- * parts are easy to add:
  *   - Part 2: in the child, block SIGUSR1 and sigwait() for it before
  *             execvp(); the parent then sends SIGUSR1, SIGSTOP and SIGCONT
  *             to every child before waiting.
@@ -48,6 +28,14 @@
 #include <sys/wait.h>
 
 #define MAX_ARGS 50
+
+void send_to_children(pid_t* pid_array, int num_children, int signal) {
+    pid_t childPID;
+    for (int i = 0; i < num_children; i++) {
+        childPID = pid_array[i];
+        kill(childPID, signal);
+    }
+}
 
 
 int main(int argc, char *argv[])
@@ -90,6 +78,14 @@ int main(int argc, char *argv[])
 	    perror("malloc");
 	    return 1;
     }
+
+    // initializing signal set for children to wait for
+    sigset_t sigset;
+    int sig;
+
+    sigemptyset(&sigset);
+    sigaddset(&sigset, SIGUSR1);
+    sigprocmask(SIG_BLOCK, &sigset, NULL);
 
     // Launch one process per line
     for (int i = 0; i < line_number; i++) {
@@ -135,12 +131,15 @@ int main(int argc, char *argv[])
         //     then free memory, close the file, and exit(EXIT_FAILURE).
         //     (Why must the child exit here? What happens if it doesn't?)
         else if (pid_array[i] == 0) {
-            execvp(args[0], args);
-            perror("Execvp");
-            free(line);
-            free(pid_array);
-            fclose(input);
-            exit(EXIT_FAILURE);
+            int received_signal = NULL;
+            if (sigwait(&sigset, &received_signal) == 0) {
+                execvp(args[0], args);
+                perror("Execvp");
+                free(line);
+                free(pid_array);
+                fclose(input);
+                exit(EXIT_FAILURE);
+            }
         } 
         //   - In the parent (> 0): do NOT wait here! Continue the loop so
         //     that all processes run at the same time.
@@ -152,8 +151,15 @@ int main(int argc, char *argv[])
 
     }
 
-    // TODO 6: Now that every process has been launched, wait for each
-    //         child to terminate using waitpid() on pid_array[i].
+    pid_t childPID;
+    // send each process a SIGUSR1 signal
+    send_to_children(pid_array, line_number, SIGUSR1);
+
+    // send each process a SIGSTOP signal
+    send_to_children(pid_array, line_number, SIGSTOP);
+
+    send_to_children(pid_array, line_number, SIGCONT);
+
     int status;
     for (int i = 0; i < line_number; i++) {
         waitpid(pid_array[i], NULL, 1);
