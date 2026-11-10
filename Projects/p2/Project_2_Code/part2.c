@@ -111,8 +111,6 @@ int main(int argc, char *argv[])
             arg_index++;
         }
 
-        args[++arg_index] = NULL;
-
         // TODO 5: fork() a child process and save its pid in pid_array[i].
         pid_array[i] = fork();
 
@@ -131,13 +129,17 @@ int main(int argc, char *argv[])
         //     then free memory, close the file, and exit(EXIT_FAILURE).
         //     (Why must the child exit here? What happens if it doesn't?)
         else if (pid_array[i] == 0) {
-            int received_signal = NULL;
+            int received_signal;
             if (sigwait(&sigset, &received_signal) == 0) {
                 execvp(args[0], args);
                 perror("Execvp");
                 free(line);
                 free(pid_array);
                 fclose(input);
+                exit(EXIT_FAILURE);
+            } else {
+                perror("sigwait");
+                free(line); free(pid_array); fclose(input);
                 exit(EXIT_FAILURE);
             }
         } 
@@ -154,15 +156,17 @@ int main(int argc, char *argv[])
     pid_t childPID;
     // send each process a SIGUSR1 signal
     send_to_children(pid_array, line_number, SIGUSR1);
+    sleep(1);
 
     // send each process a SIGSTOP signal
     send_to_children(pid_array, line_number, SIGSTOP);
+    sleep(1);
 
     send_to_children(pid_array, line_number, SIGCONT);
 
     int status;
     for (int i = 0; i < line_number; i++) {
-        waitpid(pid_array[i], NULL, 1);
+        waitpid(pid_array[i], &status, 0);
     }
     //   (Part 2/3 hint: the signaling and scheduling logic for later parts
     //    goes here, between launching the children and the final cleanup.)
