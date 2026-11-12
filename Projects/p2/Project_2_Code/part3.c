@@ -146,11 +146,14 @@ int main(int argc, char *argv[])
         if (procs[i].pid == 0) {
             int s;
             sigwait(&sigset, &s);
-            if (argv[0] == NULL) {
+
+            if (procs[i].argv[0] == NULL) {
                 char* msg = "Usage - no empty lines in input!\n";
                 write(STDOUT_FILENO, msg, sizeof(msg));
+                clean_lines_and_procs(lines, procs, n);
                 _exit(EXIT_FAILURE);
             }
+            
             execvp(procs[i].argv[0], procs[i].argv);
             perror("Execvp");
             clean_lines_and_procs(lines, procs, n);

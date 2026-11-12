@@ -135,6 +135,13 @@ int main(int argc, char *argv[])
         //     then free memory, close the file, and exit(EXIT_FAILURE).
         //     (Why must the child exit here? What happens if it doesn't?)
         else if (pid_array[i] == 0) {
+            if (args[0] == NULL) {
+                perror("Input problem");
+                free(line);
+                free(pid_array);
+                fclose(input);
+                exit(EXIT_FAILURE);
+            }
             execvp(args[0], args);
             perror("Execvp");
             free(line);
