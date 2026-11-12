@@ -97,7 +97,7 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-    char** lines = malloc(line_number * MAX_ARGS);
+    char** lines = malloc(line_number * sizeof(char*));
 
     for (int i = 0; i < line_number; i++) {
         lines[i] = NULL;
@@ -146,6 +146,11 @@ int main(int argc, char *argv[])
         if (procs[i].pid == 0) {
             int s;
             sigwait(&sigset, &s);
+            if (argv[0] == NULL) {
+                char* msg = "Usage - no empty lines in input!\n";
+                write(STDOUT_FILENO, msg, sizeof(msg));
+                _exit(EXIT_FAILURE);
+            }
             execvp(procs[i].argv[0], procs[i].argv);
             perror("Execvp");
             clean_lines_and_procs(lines, procs, n);
@@ -168,9 +173,7 @@ int main(int argc, char *argv[])
             wake = 0;
 
             int status;
-            waitpid(procs[current_proc].pid, &status, WNOHANG); // non blocking (WNOHANG)
-
-            if (WIFEXITED(status)) {
+            if (waitpid(procs[current_proc].pid, NULL, WNOHANG) == procs[current_proc].pid) {
                 remaining--;
                 procs[current_proc].done = 1;
 
