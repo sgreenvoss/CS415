@@ -26,6 +26,11 @@
 
 #define MAX_ARGS 50
 
+// made this so that the checker script would pass.
+// uncomment to allow it to print every time it makes a scheduling decision.
+
+// #define NICE_OUTPUT
+
 static volatile sig_atomic_t wake = 0;
 static void on_wake(int sig) { (void)sig; wake = 1; }
 
@@ -37,54 +42,19 @@ typedef struct {
 
 int next_proc_index(proc* procs, int nprocs, int current_idx) {
     for (int i = 1; i <= nprocs; i++) {
-        int idx = (current_idx + i) % n;
+        int idx = (current_idx + i) % nprocs;
         if (!procs[idx].done) return idx;
     }
     return -1; // everythign is done!
 }
 
-
-int select_and_run_next_proc() {
-    if (pid_statuses[current_pid_idx] == NOT_BEGUN) {
-        pid_array[current_pid_idx] = fork();
-
-        //   - If fork() fails (< 0): report the error with perror(),
-        //     free resources, and exit(EXIT_FAILURE).
-        if (pid_array[current_pid_idx] < 0) {
-            perror("Fork");
-            free(pid_array);
-            free(pid_statuses);
-            exit(EXIT_FAILURE);
-        }
-        //   - In the child (== 0): call execvp(args[0], args).
-        //     execvp() only returns on failure. In that case:
-        //         perror("Execvp");
-        //     then free memory, close the file, and exit(EXIT_FAILURE).
-        //     (Why must the child exit here? What happens if it doesn't?)
-        else if (pid_array[current_pid_idx] == 0) {
-            int received_signal;
-            if (sigwait(&sigset, &received_signal) == 0) {
-                execvp(args_for_procs[current_pid_idx][0], args_for_procs[current_pid_idx]);
-                perror("Execvp");
-                free(pid_array);
-                free(pid_statuses);
-                exit(EXIT_FAILURE);
-            } else {
-                perror("sigwait");
-                free(pid_array); free(pid_statuses); 
-                exit(EXIT_FAILURE);
-            }
-        } else {
-            // parent branch
-            current_pid_idx++;
-        }
-
-    } else if (pid_statuses[current_pid_idx] == PAUSED) {
-        // resume process
-        if ()
-    } else if (pid_statuses[current_pid_idx] == FINISHED) {
-        current_pid_idx++;
+void clean_lines_and_procs(char** lines, proc* procs, int n) {
+    for (int i = 0; i < n; i++) {
+        free(procs[i].argv);
+        free(lines[i]);
     }
+    free(lines);
+    free(procs);
 }
 
 
@@ -104,15 +74,16 @@ int main(int argc, char *argv[])
     }
 
     // Variables for reading the input file with getline()
-    char *line = NULL;
     size_t len = 0;
     ssize_t read;
+    char* line = NULL;
 
     int line_number = 0;
 
     while ((read = getline(&line, &len, input)) != -1) {
         line_number += 1;
     }
+    free(line);
     int n = line_number; // better name for number of procs
 
     rewind(input);
@@ -126,27 +97,30 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
+    char** lines = malloc(line_number * MAX_ARGS);
+
     for (int i = 0; i < line_number; i++) {
-        read = getline(&line, &len, input);
+        lines[i] = NULL;
+        read = getline(&lines[i], &len, input);
         if (read == -1) {
             break;
         }
 
-        line[strcspn(line, "\n")] = '\0';
+        lines[i][strcspn(lines[i], "\n")] = '\0';
 
         procs[i].argv = malloc(MAX_ARGS * sizeof(char*));
         int arg_index = 0;
 
-        procs[i].argv[arg_index] = strdup(strtok(line, " "));
+        procs[i].argv[arg_index] = strtok(lines[i], " ");
         arg_index++;
         
-        while ((procs[i].argv[arg_index] = strdup(strtok(NULL, " "))) != NULL){
+        while ((procs[i].argv[arg_index] = strtok(NULL, " ")) != NULL){
             arg_index++;
         }
         procs[i].done = 0;
     }
+    fclose(input);
 
-    free(line);
 
     // initializing signal set for children to wait for
     sigset_t sigset;
@@ -171,9 +145,10 @@ int main(int argc, char *argv[])
         procs[i].pid = fork();
         if (procs[i].pid == 0) {
             int s;
-            sigwait(&usr1, &s);
+            sigwait(&sigset, &s);
             execvp(procs[i].argv[0], procs[i].argv);
-            perror("execvp");
+            perror("Execvp");
+            clean_lines_and_procs(lines, procs, n);
             _exit(EXIT_FAILURE);
         }
     }
@@ -193,28 +168,36 @@ int main(int argc, char *argv[])
             wake = 0;
 
             int status;
-            // if it has changed state (to finished?), will return its pid
-            if (waitpid(procs[current_proc].pid, &status, WNOHANG) == procs[current_proc].pid) {
+            waitpid(procs[current_proc].pid, &status, WNOHANG); // non blocking (WNOHANG)
+
+            if (WIFEXITED(status)) {
                 remaining--;
                 procs[current_proc].done = 1;
-                printf("[MCP] pid %d finished\n", procs[current_proc].pid);
+
+                #ifdef NICE_OUTPUT 
+                    printf("[MCP] pid %d finished\n", procs[current_proc].pid);
+                #endif
             } else {
                 // interrupt the running proc
                 kill(procs[current_proc].pid, SIGSTOP);
-                printf("[MCP] pid %d time slice expired, stopped.\n", procs[current_proc].pid);
+
+                #ifdef NICE_OUTPUT 
+                    printf("[MCP] pid %d time slice expired, stopped.\n", procs[current_proc].pid);
+                #endif
             }
             current_proc = next_proc_index(procs, n, current_proc);
             if (current_proc == -1) break; // all procs have finished
-            printf("[MCP] resuming pid %d (%s)\n", procs[current_proc].pid, procs[current_proc].argv[0]);
+
+            #ifdef NICE_OUTPUT
+                printf("[MCP] resuming pid %d (%s)\n", procs[current_proc].pid, procs[current_proc].argv[0]);
+            #endif
+
             kill(procs[current_proc].pid, SIGCONT);
             alarm(1);
         }
     }
-    fclose(input);
 
-    for (int i = 0; i < n; i++) {
-        free(procs[i].argv);
-    }
-    free(procs);
+    clean_lines_and_procs(lines, procs, n);
+
     exit(EXIT_SUCCESS);
 }
