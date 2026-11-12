@@ -26,37 +26,23 @@
 
 #define MAX_ARGS 50
 
-int current_pid_idx;
-int finished_procs;
+static volatile sig_atomic_t wake = 0;
+static void on_wake(int sig) { (void)sig; wake = 1; }
 
-pid_t* pid_array;
-int* pid_statuses;
-char*** args_for_procs;
+typedef struct {
+    pid_t pid;
+    char **argv;
+    int done;
+} proc;
 
-
-enum childStatus {
-    NOT_BEGUN,
-    RUNNING,
-    PAUSED,
-    FINISHED
-};
-
-
-void send_to_children(pid_t* pid_array, int num_children, int signal) {
-    pid_t childPID;
-    for (int i = 0; i < num_children; i++) {
-        childPID = pid_array[i];
-        kill(childPID, signal);
+int next_proc_index(proc* procs, int nprocs, int current_idx) {
+    for (int i = 1; i <= nprocs; i++) {
+        int idx = (current_idx + i) % n;
+        if (!procs[idx].done) return idx;
     }
+    return -1; // everythign is done!
 }
 
-void sigalrm_handler(int signum) {
-    char* message = "received signal alarm\n";
-    write(STDOUT_FILENO, message, strlen(message));
-    kill(pid_array[current_pid_idx], SIGSTOP);
-
-    return;
-}
 
 int select_and_run_next_proc() {
     if (pid_statuses[current_pid_idx] == NOT_BEGUN) {
@@ -127,11 +113,18 @@ int main(int argc, char *argv[])
     while ((read = getline(&line, &len, input)) != -1) {
         line_number += 1;
     }
+    int n = line_number; // better name for number of procs
 
     rewind(input);
 
     // process all the input first, storing in big arr
-    args_for_procs = malloc(sizeof(char**) * line_number);
+
+    proc* procs = malloc(sizeof(proc) * line_number);
+    if (procs == NULL) {
+        perror("proc malloc");
+        fclose(input);
+        exit(EXIT_FAILURE);
+    }
 
     for (int i = 0; i < line_number; i++) {
         read = getline(&line, &len, input);
@@ -141,25 +134,19 @@ int main(int argc, char *argv[])
 
         line[strcspn(line, "\n")] = '\0';
 
-        args_for_procs[i] = malloc(MAX_ARGS * sizeof(char*));
+        procs[i].argv = malloc(MAX_ARGS * sizeof(char*));
         int arg_index = 0;
 
-        args_for_procs[i][arg_index] = strtok(line, " ");
+        procs[i].argv[arg_index] = strdup(strtok(line, " "));
         arg_index++;
         
-        while ((args_for_procs[i][arg_index] = strtok(NULL, " ")) != NULL){
-            printf("%s\n", args_for_procs[i][arg_index]);
+        while ((procs[i].argv[arg_index] = strdup(strtok(NULL, " "))) != NULL){
             arg_index++;
         }
+        procs[i].done = 0;
     }
 
-    pid_array = malloc(sizeof(pid_t*) * line_number);
-    pid_statuses = malloc(sizeof(int) * line_number);
-
-    if (pid_array == NULL || pid_statuses == NULL) {
-	    perror("malloc");
-	    return 1;
-    }
+    free(line);
 
     // initializing signal set for children to wait for
     sigset_t sigset;
@@ -171,7 +158,7 @@ int main(int argc, char *argv[])
 
     // sig action handler (for alarming)
     struct sigaction sa;
-    sa.sa_handler = sigalrm_handler;
+    sa.sa_handler = on_wake;
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = 0;
 
@@ -180,123 +167,54 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-    for (int i = 0; i < line_number; i++) {
-        pid_statuses[i] = NOT_BEGUN;
+    for (int i = 0; i < n; i++) {
+        procs[i].pid = fork();
+        if (procs[i].pid == 0) {
+            int s;
+            sigwait(&usr1, &s);
+            execvp(procs[i].argv[0], procs[i].argv);
+            perror("execvp");
+            _exit(EXIT_FAILURE);
+        }
     }
 
-    // int finished_procs = 0;
-    // int current_child_index = 0;
+    // start all procs but then immediately stop them so we can do scheduling
+    for (int i = 0; i < n; i++) kill(procs[i].pid, SIGUSR1);
+    for (int i = 0; i < n; i++) kill(procs[i].pid, SIGSTOP);
 
+    int remaining = n;
+    int current_proc = 0;
 
-    // while (finished_procs != line_number) {
-    //     if (pid_statuses[current_child_index] == NOT_BEGUN) {
-    //         read = getline(&line, &len, input);
-    //         if (read == -1) {
-    //             break;
-    //         }
+    kill(procs[current_proc].pid, SIGCONT); // resume the first process
+    alarm(1);
 
-    //         line[strcspn(line, "\n")] = '\0';
+    while (remaining > 0) {
+        if (wake) {
+            wake = 0;
 
-    //         char *args[MAX_ARGS];
-    //         int arg_index = 0;
+            int status;
+            // if it has changed state (to finished?), will return its pid
+            if (waitpid(procs[current_proc].pid, &status, WNOHANG) == procs[current_proc].pid) {
+                remaining--;
+                procs[current_proc].done = 1;
+                printf("[MCP] pid %d finished\n", procs[current_proc].pid);
+            } else {
+                // interrupt the running proc
+                kill(procs[current_proc].pid, SIGSTOP);
+                printf("[MCP] pid %d time slice expired, stopped.\n", procs[current_proc].pid);
+            }
+            current_proc = next_proc_index(procs, n, current_proc);
+            if (current_proc == -1) break; // all procs have finished
+            printf("[MCP] resuming pid %d (%s)\n", procs[current_proc].pid, procs[current_proc].argv[0]);
+            kill(procs[current_proc].pid, SIGCONT);
+            alarm(1);
+        }
+    }
+    fclose(input);
 
-    //         args[arg_index] = strtok(line, " ");
-    //         arg_index++;
-            
-    //         while ((args[arg_index] = strtok(NULL, " ")) != NULL){
-    //             arg_index++;
-    //         }
-
-    //         pid_array[i] = fork();
-
-
-    //         //   - If fork() fails (< 0): report the error with perror(),
-    //         //     free resources, and exit(EXIT_FAILURE).
-    //         if (pid_array[i] < 0) {
-    //             perror("Fork");
-    //             free(line);
-    //             free(pid_array);
-    //             free(pid_statuses);
-    //             fclose(input);
-    //             exit(EXIT_FAILURE);
-    //         }
-    //         //   - In the child (== 0): call execvp(args[0], args).
-    //         //     execvp() only returns on failure. In that case:
-    //         //         perror("Execvp");
-    //         //     then free memory, close the file, and exit(EXIT_FAILURE).
-    //         //     (Why must the child exit here? What happens if it doesn't?)
-    //         else if (pid_array[i] == 0) {
-    //             int received_signal;
-    //             if (sigwait(&sigset, &received_signal) == 0) {
-    //                 execvp(args[0], args);
-    //                 perror("Execvp");
-    //                 free(line);
-    //                 free(pid_array);
-    //                 free(pid_statuses);
-    //                 fclose(input);
-    //                 exit(EXIT_FAILURE);
-    //             } else {
-    //                 perror("sigwait");
-    //                 free(line); free(pid_array); free(pid_statuses); 
-    //                 fclose(input);
-    //                 exit(EXIT_FAILURE);
-    //             }
-    //         } else {
-    //             // parent branch
-    //             current_child_index++;
-    //         }
-
-    //     } else if (pid_statuses[current_child_index] == PAUSED) {
-    //         // resume process
-    //         if ()
-    //     } else if (pid_statuses[current_child_index] == FINISHED) {
-    //         current_child_index++;
-    //     }
-    //     //   - In the parent (> 0): do NOT wait here! Continue the loop so
-    //     //     that all processes run at the same time.
-
-    //     //   (Part 2 hint: this child branch is where the child will later
-    //     //    sigwait() for SIGUSR1 before calling execvp().)
-
-    // }
-
-    // // while (finished_procs != line_number) {
-    // //     if (pid_statuses[current_child_index] == NOT_BEGUN) {
-    // //         kill(pid_array)
-    // //     }
-    // //     printf("current child index is %d\n", current_child_index);
-    // //     kill(pid_array[current_child_index], SIGSTOP);
-    // //     pid_statuses
-
-    // //     current_child_index = (current_child_index + 1) % line_number;
-    // //     if 
-
-    // //     kill(pid_array[current_child_index], SIGCONT);
-    // //     alarm(1);
-    // // }
-
-    // // send each process a SIGUSR1 signal
-    // send_to_children(pid_array, line_number, SIGUSR1);
-    // sleep(1);
-
-    // // i have to 
-
-    // // send each process a SIGSTOP signal
-    // send_to_children(pid_array, line_number, SIGSTOP);
-    // sleep(1);
-
-    // send_to_children(pid_array, line_number, SIGCONT);
-
-    // int status;
-    // for (int i = 0; i < line_number; i++) {
-    //     waitpid(pid_array[i], &status, 0);
-    // }
-
-
-    // fclose(input);
-    // free(line);
-    // free(pid_array);
-
-    // exit(EXIT_SUCCESS);
-
+    for (int i = 0; i < n; i++) {
+        free(procs[i].argv);
+    }
+    free(procs);
+    exit(EXIT_SUCCESS);
 }
