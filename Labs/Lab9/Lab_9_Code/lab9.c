@@ -46,22 +46,29 @@ int get_time() {
 }
 
 void explore_park(passenger_t *p) {
-    // TODO: print "[Time: t] Passenger i is exploring the park"
+    // print "[Time: t] Passenger i is exploring the park"
     printf("[Time: %d] Passenger %d is exploring the park\n", get_time(), p->id);
-    // TODO: sleep for a random time of 1-3 seconds, use rand_r() with p->seed
-    int s_time = (rand_r(p->seed) % 3) + 1;
+    // sleep for a random time of 1-3 seconds, use rand_r() with p->seed
+    int s_time = (rand_r(&p->seed) % 3) + 1;
     sleep(s_time);
-    // TODO: print "[Time: t] Passenger i finished exploring, entering the ticket booth"
+    // print "[Time: t] Passenger i finished exploring, entering the ticket booth"
     printf("[Time: %d] Passenger %d finished exploring, entering the ticket booth\n", get_time(), p->id);
 }
 
 void get_ride_ticket(passenger_t *p) {
     // TODO: Allocate the ticket booth mutex lock (ticket_mutex)
-    // TODO: print "[Time: t] First Print: Passenger i is buying a ticket"
-    // TODO: sleep for one second
+    pthread_mutex_lock(&ticket_mutex);
+    // print "[Time: t] First Print: Passenger i is buying a ticket"
+    printf("[Time: %d] First Print: Passenger %d is buying a ticket\n", get_time(), p->id);
+    // sleep for one second
+    sleep(1);
     // TODO: increment tickets_sold and set p->has_ticket to 1
+    tickets_sold++;
+    p->has_ticket = 1;
     // TODO: print "[Time: t] Second Print: Passenger i acquired ticket #k" (k = tickets_sold)
+    printf("[Time: %d] Second Print: Passenger %d acquired ticket #%d\n", get_time(), p->id, tickets_sold);
     // TODO: Release the ticket booth mutex lock
+    pthread_mutex_unlock(&ticket_mutex);
 
     // TODO: You may also comment out the lock and unlock and see how the output changes,
     // describe your observation below:
@@ -69,16 +76,26 @@ void get_ride_ticket(passenger_t *p) {
 }
 
 void enter_ride_queue(passenger_t *p) {
-    // TODO: Allocate the ride queue mutex lock (queue_mutex)
-    // TODO: increment ride_queue_size
-    // TODO: print "[Time: t] Passenger i has entered the ride queue (queue size: s)"
-    // TODO: Release the ride queue mutex lock
+    // Allocate the ride queue mutex lock (queue_mutex)
+    //pthread_mutex_init(&queue_mutex, NULL);
+    pthread_mutex_lock(&queue_mutex);
+    // increment ride_queue_size
+    ride_queue_size++;
+    // print "[Time: t] Passenger i has entered the ride queue (queue size: s)"
+    printf("[Time: %d] Passenger %d has entered the ride queue (queue size: %d)\n", get_time(), p->id, ride_queue_size);
+    // Release the ride queue mutex lock
+    pthread_mutex_unlock(&queue_mutex);
 }
 
 void *passenger_thread(void *arg) {
-    // TODO: get this passenger's passenger_t from arg
-    // TODO: print "[Time: t] Passenger i entered the park"
-    // TODO: call explore_park(), get_ride_ticket(), then enter_ride_queue()
+    // get this passenger's passenger_t from arg
+    passenger_t *pass = (passenger_t*) arg;
+    // print "[Time: t] Passenger i entered the park"
+    printf("[Time: %d] Passenger %d entered the park\n", get_time(), pass->id);
+    // call explore_park(), get_ride_ticket(), then enter_ride_queue()
+    explore_park(pass);
+    get_ride_ticket(pass);
+    enter_ride_queue(pass);
 
     return NULL;
 }
@@ -93,26 +110,46 @@ int main(int argc, char *argv[]) {
     if (n > MAX_THREADS) n = MAX_THREADS;
     if (n < 1) n = 1;
 
+    pthread_mutex_init(&queue_mutex, NULL);
+    pthread_mutex_init(&ticket_mutex, NULL);
+
     printf("- Number of passenger threads: %d\n\n", n);
 
     srand(time(NULL));
     start_time = time(NULL);
 
-    // TODO: Allocate an array of n passenger_t on the heap with malloc()
-    passenger_t passengers[n] = malloc(sizeof(passenger_t) * n);
-    // TODO: For each passenger i: set id to i, has_ticket to 0, and seed to rand()
+    // Allocate an array of n passenger_t on the heap with malloc()
+    passenger_t *passengers = malloc(sizeof(passenger_t) * n);
+    // For each passenger i: set id to i, has_ticket to 0, and seed to rand()
     for (int i = 0; i < n; i++) {
-        passengers[i].id = 0;
+        passengers[i].id = i;
         passengers[i].has_ticket = 0;
         passengers[i].seed = rand();
     }
 
-    // TODO: Create n threads, each calling passenger_thread with a pointer to its own passenger_t
+    // Create n threads, each calling passenger_thread with a pointer to its own passenger_t
+    pthread_attr_t attr[n];
+    pthread_t threads[n];
+    for (int i = 0; i < n; i++) {
+        pthread_attr_init(&attr[i]);
+        int rc = pthread_create(&threads[i], &attr[i], passenger_thread, &passengers[i]);
+        if (rc) {
+            printf("Error creating thread %d\n", i);
+            exit(EXIT_FAILURE);
+        }
+    }
+    // Wait for all n threads to finish with pthread_join()
+    for (int i = 0; i < n; i++) {
+        pthread_join(threads[i], NULL);
+    }
+    // print "\n[Time: t] All n passengers have tickets (tickets sold: k, ride queue size: s)"
+    printf("\n[Time: %d] All %d passengers have tickets (tickets sold: %d, ride queue size: %d)\n", 
+                get_time(), n, tickets_sold, ride_queue_size);
+    // free the passenger array and destroy both mutexes
+    free(passengers);
 
-    // TODO: Wait for all n threads to finish with pthread_join()
-
-    // TODO: print "\n[Time: t] All n passengers have tickets (tickets sold: k, ride queue size: s)"
-    // TODO: free the passenger array and destroy both mutexes
+    pthread_mutex_destroy(&ticket_mutex);
+    pthread_mutex_destroy(&queue_mutex);
 
     return 0;
 }
