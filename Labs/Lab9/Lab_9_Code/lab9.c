@@ -9,7 +9,14 @@
   [Additional Question]: lab9_ai.c is an AI-generated program for this lab,
   but it contains a deadlock. Identify where the deadlock occurs and explain how to fix it.
 
-  [Your Answer]:
+  If the queue is full, get_ride_ticket will return. However, this is before it releases
+  the lock on the ticket mutex. That means that the next thread to want to get a ride ticket
+  will get stuck on its first line waiting for the lock to be released. We can verify this by 
+  compiling the code and running it with five passengers - it hangs after filling the queue. 
+
+  This can be fixed by only locking and unlocking when strictly necessary - right around the increment and
+  read of tickets_sold. It could also be done by unlocking before returning when the queue is full, but
+  that doesn't seem as elegant. 
 */
 
 #include <stdio.h>
@@ -65,13 +72,10 @@ void get_ride_ticket(passenger_t *p) {
     // TODO: increment tickets_sold and set p->has_ticket to 1
     tickets_sold++;
     p->has_ticket = 1;
-    // TODO: print "[Time: t] Second Print: Passenger i acquired ticket #k" (k = tickets_sold)
+    // print "[Time: t] Second Print: Passenger i acquired ticket #k" (k = tickets_sold)
     printf("[Time: %d] Second Print: Passenger %d acquired ticket #%d\n", get_time(), p->id, tickets_sold);
-    // TODO: Release the ticket booth mutex lock
+    // Release the ticket booth mutex lock
     pthread_mutex_unlock(&ticket_mutex);
-
-    // TODO: You may also comment out the lock and unlock and see how the output changes,
-    // describe your observation below:
 
 }
 
